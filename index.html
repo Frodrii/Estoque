@@ -2,29 +2,22 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <!-- Esta meta tag é ESSENCIAL para responsividade -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 Itens por Palete - Responsivo</title>
+    <title>📦 Itens por Palete - Filtro Avançado</title>
     <style>
-        /* Reset básico */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding: 10px;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
         h1 {
             text-align: center;
             color: #333;
             font-size: 1.8rem;
             margin-bottom: 20px;
         }
-        /* Área de filtros - flexível */
         .filtros {
             background: white;
             padding: 20px;
@@ -54,21 +47,19 @@
         }
         .stats {
             background: #e9ecef;
-            padding: 5px 10px;
+            padding: 5px 15px;
             border-radius: 20px;
             color: #555;
             font-size: 0.9rem;
             text-align: center;
             white-space: nowrap;
         }
-        /* Bloco de cada palete */
         .bloco-palete {
             background: white;
             border-radius: 8px;
             margin-bottom: 25px;
             padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            /* Rolagem horizontal para a tabela */
             overflow-x: auto;
         }
         .titulo-palete {
@@ -79,12 +70,11 @@
             padding-bottom: 5px;
             margin-bottom: 15px;
         }
-        /* Tabela */
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9em;
-            min-width: 800px; /* Garante que a tabela não fique comprimida demais */
+            min-width: 900px;
         }
         th {
             background-color: #3498db;
@@ -98,61 +88,29 @@
             border-bottom: 1px solid #ddd;
             white-space: nowrap;
         }
-        .codigo, .qtde {
-            text-align: right;
-        }
-        .validade {
-            text-align: center;
-        }
-        /* Mensagens de erro/vazio */
+        .codigo, .qtde { text-align: right; }
+        .validade { text-align: center; }
         .erro, .vazio {
             text-align: center;
             padding: 40px;
             border-radius: 5px;
         }
-        .erro {
-            color: #e74c3c;
-            background: #fadbd8;
-        }
-        .vazio {
-            color: #777;
-            background: #eee;
-            font-style: italic;
-        }
+        .erro { color: #e74c3c; background: #fadbd8; }
+        .vazio { color: #777; background: #eee; font-style: italic; }
 
-        /* 📱 Media queries para telas pequenas */
+        /* Responsividade */
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; }
-            .filtros {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .filtros > div {
-                width: 100%;
-            }
-            .stats {
-                align-self: flex-end;
-            }
-            .bloco-palete {
-                padding: 10px;
-            }
-            .titulo-palete {
-                font-size: 1.1em;
-            }
-            table {
-                font-size: 0.8em;
-                min-width: 700px; /* Um pouco menor, mas ainda rolável */
-            }
-            th, td {
-                padding: 5px;
-            }
+            .filtros { flex-direction: column; align-items: stretch; }
+            .filtros > div { width: 100%; }
+            .stats { align-self: flex-end; }
+            .bloco-palete { padding: 10px; }
+            .titulo-palete { font-size: 1.1em; }
+            table { font-size: 0.8em; min-width: 700px; }
+            th, td { padding: 5px; }
         }
-
-        /* 📱 Telas muito pequenas (menos de 400px) */
         @media (max-width: 400px) {
-            table {
-                min-width: 600px;
-            }
+            table { min-width: 600px; }
         }
     </style>
 </head>
@@ -171,6 +129,14 @@
                     <option value="todos">Todos os meses/anos</option>
                 </select>
             </div>
+            <div>
+                <label for="tipoLocal">❄️ Tipo de Local:</label>
+                <select id="tipoLocal">
+                    <option value="todos">Todos</option>
+                    <option value="congelada">Congelada (F01-F04, SORVETE)</option>
+                    <option value="refrigerada">Refrigerada (demais)</option>
+                </select>
+            </div>
             <div class="stats" id="stats">0 itens exibidos</div>
         </div>
 
@@ -179,22 +145,33 @@
     </div>
 
     <script>
-        // 🔁 CONFIGURAÇÕES - ajuste se necessário
+        // CONFIGURAÇÕES - ID da planilha e nome da aba
         const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
         const SHEET_NAME = 'DadosLimpos';
         const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 
-        // Nome das colunas na planilha (após remoção de acentos)
+        // Mapeamento das colunas (use os nomes EXATOS da sua planilha)
         const COLUNAS = {
-            codigo: 'Codigo',          // ⚠️ ajuste aqui se na planilha estiver "Código" com acento
+            codigo: 'Codigo',                // se for "Código" com acento, altere aqui
             produto: 'Produto',
             palete: 'Palete',
             qtde: 'Qtde Esperada',
             validade: 'Validade',
             dataEntrada: 'Data Entrada',
             recebimento: 'Recebimento',
-            local: 'Locais vinculados'
+            local: 'Locais vinculados'       // nome da coluna de local
         };
+
+        // Função para classificar o local em congelada ou refrigerada
+        function classificarLocal(localStr) {
+            if (!localStr) return 'refrigerada'; // vazio = refrigerada por padrão
+            const local = localStr.toUpperCase();
+            // Congelada se começar com F01, F02, F03, F04 ou conter SORVETE
+            if (local.startsWith('F01') || local.startsWith('F02') || local.startsWith('F03') || local.startsWith('F04') || local.includes('SORVETE')) {
+                return 'congelada';
+            }
+            return 'refrigerada';
+        }
 
         let dadosOriginais = [];
         let itensFiltrados = [];
@@ -203,6 +180,7 @@
         const conteudoDiv = document.getElementById('conteudo');
         const buscaInput = document.getElementById('busca');
         const mesAnoSelect = document.getElementById('mesAnoValidade');
+        const tipoLocalSelect = document.getElementById('tipoLocal');
         const statsSpan = document.getElementById('stats');
 
         async function carregarDados() {
@@ -213,7 +191,7 @@
                 dadosOriginais = await response.json();
                 if (dadosOriginais.length === 0) throw new Error('Nenhum dado encontrado');
 
-                // Extrai meses/anos únicos da coluna "Validade" (formato DD/MM/AAAA)
+                // Popula o filtro de mês/ano
                 const mesesAnos = new Set();
                 dadosOriginais.forEach(item => {
                     const validade = item[COLUNAS.validade];
@@ -241,13 +219,14 @@
                 statusDiv.style.display = 'none';
                 
             } catch (error) {
-                statusDiv.innerHTML = `<div class="erro">❌ Erro: ${error.message}. Verifique se a planilha está pública e o nome da aba.</div>`;
+                statusDiv.innerHTML = `<div class="erro">❌ Erro: ${error.message}</div>`;
             }
         }
 
         function aplicarFiltros() {
             const termoBusca = buscaInput.value.trim().toLowerCase();
             const mesAnoSelecionado = mesAnoSelect.value;
+            const tipoLocalSelecionado = tipoLocalSelect.value;
 
             itensFiltrados = dadosOriginais.filter(item => {
                 // Filtro por mês/ano
@@ -258,8 +237,15 @@
                         const mesAno = `${partes[1]}/${partes[2]}`;
                         if (mesAno !== mesAnoSelecionado) return false;
                     } else {
-                        return false; // data inválida, não exibe se filtro ativo
+                        return false; // data inválida, não inclui
                     }
+                }
+
+                // Filtro por tipo de local
+                if (tipoLocalSelecionado !== 'todos') {
+                    const local = item[COLUNAS.local] || '';
+                    const categoria = classificarLocal(local);
+                    if (categoria !== tipoLocalSelecionado) return false;
                 }
 
                 // Filtro por busca textual
@@ -287,6 +273,7 @@
                 return;
             }
 
+            // Agrupa por palete
             const paletes = {};
             itensFiltrados.forEach(item => {
                 const numPalete = item[COLUNAS.palete] || 'SEM PALETE';
@@ -294,7 +281,8 @@
                 paletes[numPalete].push(item);
             });
 
-            const paletesOrdenados = Object.keys(paletes).sort((a,b) => 
+            // Ordena paletes numericamente
+            const paletesOrdenados = Object.keys(paletes).sort((a, b) => 
                 a.localeCompare(b, undefined, { numeric: true })
             );
 
@@ -327,10 +315,12 @@
             conteudoDiv.innerHTML = html;
         }
 
-        // Event listeners
+        // Event listeners para os filtros
         buscaInput.addEventListener('input', aplicarFiltros);
         mesAnoSelect.addEventListener('change', aplicarFiltros);
+        tipoLocalSelect.addEventListener('change', aplicarFiltros);
 
+        // Inicia o carregamento
         carregarDados();
     </script>
 </body>
