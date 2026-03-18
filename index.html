@@ -2,8 +2,8 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 Itens por Palete - Versão Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>📦 Itens por Palete</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,7 @@
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
             background: #f8fafc;
-            padding: 24px;
+            padding: 16px;
             color: #0f172a;
             line-height: 1.5;
         }
@@ -27,36 +27,35 @@
         h1 {
             text-align: center;
             color: #0f172a;
-            font-size: 2.2rem;
-            margin-bottom: 32px;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
             font-weight: 600;
             letter-spacing: -0.02em;
         }
 
-        /* Área de filtros */
+        /* Área de filtros - ajustada para mobile */
         .filtros {
             background: white;
-            padding: 28px;
-            border-radius: 20px;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-            align-items: flex-end;
+            flex-direction: column;
+            gap: 16px;
             border: 1px solid #e2e8f0;
         }
 
         .filtros > div {
-            flex: 1 1 300px;
+            width: 100%;
         }
 
         .filtros label {
             font-weight: 600;
             color: #334155;
             display: block;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.02em;
         }
@@ -64,7 +63,7 @@
         .filtros input,
         .filtros select {
             width: 100%;
-            padding: 12px 18px;
+            padding: 12px 16px;
             font-size: 1rem;
             font-family: inherit;
             border: 1.5px solid #cbd5e1;
@@ -77,65 +76,66 @@
         .filtros select:focus {
             border-color: #2563eb;
             outline: none;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .stats {
             background: #eef2f6;
-            padding: 10px 24px;
+            padding: 10px 16px;
             border-radius: 40px;
             color: #1e293b;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             text-align: center;
             white-space: nowrap;
             align-self: center;
             border: 1px solid #cbd5e1;
+            width: fit-content;
+            margin-top: 4px;
         }
 
         /* Bloco de palete */
         .bloco-palete {
             background: white;
-            border-radius: 20px;
-            margin-bottom: 32px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
             overflow-x: auto;
-            border-left: 6px solid #2563eb;
+            border-left: 4px solid #2563eb;
             border: 1px solid #e2e8f0;
         }
 
         .titulo-palete {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: #0f172a;
-            border-bottom: 3px solid #2563eb;
-            padding-bottom: 14px;
-            margin-bottom: 24px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
             letter-spacing: -0.01em;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.95rem;
-            min-width: 700px;
+            font-size: 0.9rem;
+            min-width: 600px;
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
         }
 
         th {
             background-color: #2563eb;
             color: white;
-            padding: 14px 16px;
+            padding: 12px 12px;
             text-align: left;
             white-space: nowrap;
             font-weight: 600;
-            font-size: 0.95rem;
-            letter-spacing: 0.02em;
+            font-size: 0.9rem;
         }
 
         td {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
         }
@@ -154,9 +154,9 @@
         .erro,
         .vazio {
             text-align: center;
-            padding: 60px 24px;
-            border-radius: 20px;
-            font-size: 1.2rem;
+            padding: 40px 16px;
+            border-radius: 16px;
+            font-size: 1.1rem;
             font-weight: 500;
         }
 
@@ -173,49 +173,78 @@
             border: 1px solid #cbd5e1;
         }
 
-        /* Responsividade */
-        @media (max-width: 600px) {
+        /* Ajustes para telas muito pequenas */
+        @media (min-width: 480px) {
+            .filtros {
+                padding: 24px;
+                gap: 20px;
+            }
+        }
+
+        /* Para tablets e acima, volta ao layout horizontal */
+        @media (min-width: 768px) {
             body {
-                padding: 16px;
+                padding: 24px;
             }
 
             h1 {
-                font-size: 1.8rem;
-                margin-bottom: 24px;
+                font-size: 2.2rem;
+                margin-bottom: 32px;
             }
 
             .filtros {
-                padding: 20px;
-                gap: 18px;
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                align-items: flex-end;
+                padding: 28px;
+                gap: 24px;
+                margin-bottom: 40px;
             }
 
             .filtros > div {
-                width: 100%;
+                flex: 1 1 300px;
             }
 
             .stats {
-                align-self: flex-end;
+                padding: 10px 24px;
+                font-size: 1rem;
+                margin-top: 0;
             }
 
             .bloco-palete {
-                padding: 18px;
-                margin-bottom: 24px;
+                padding: 24px;
+                margin-bottom: 32px;
             }
 
             .titulo-palete {
-                font-size: 1.4rem;
+                font-size: 1.6rem;
+                padding-bottom: 14px;
+                margin-bottom: 24px;
             }
 
             table {
-                font-size: 0.8rem;
-                min-width: 600px;
+                font-size: 0.95rem;
             }
 
-            th,
-            td {
-                padding: 10px;
+            th, td {
+                padding: 14px 16px;
+            }
+        }
+
+        /* Ajuste extra para telas entre 480px e 768px (modo landscape de celular) */
+        @media (min-width: 480px) and (max-width: 767px) {
+            .filtros {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+
+            .filtros > div {
+                flex: 1 1 calc(50% - 8px);
+            }
+
+            .stats {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -226,11 +255,11 @@
 
         <div class="filtros">
             <div>
-                <label for="busca">🔍 Buscar (código, produto, palete)</label>
+                <label for="busca">🔍 BUSCAR (CÓDIGO, PRODUTO, PALETE)</label>
                 <input type="text" id="busca" placeholder="Ex: 127, BATATA, 00033835" autocomplete="off">
             </div>
             <div>
-                <label for="mesAnoValidade">📅 Mês/Ano de validade</label>
+                <label for="mesAnoValidade">📅 MÊS/ANO DE VALIDADE</label>
                 <select id="mesAnoValidade">
                     <option value="todos">Todos os meses/anos</option>
                 </select>
