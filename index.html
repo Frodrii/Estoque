@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 Itens por Palete - Espaçamento Ajustado</title>
+    <title>📦 Itens por Palete - Versão Simplificada</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -21,7 +21,7 @@
             font-size: 2rem;
             margin-bottom: 30px;
         }
-        /* Área de filtros com mais espaçamento */
+        /* Área de filtros */
         .filtros {
             background: white;
             padding: 25px;
@@ -66,7 +66,7 @@
             white-space: nowrap;
             align-self: center;
         }
-        /* Bloco de palete com mais espaçamento interno e externo */
+        /* Bloco de palete */
         .bloco-palete {
             background: white;
             border-radius: 12px;
@@ -88,7 +88,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.95em;
-            min-width: 900px;
+            min-width: 700px; /* Ajustado para menos colunas */
         }
         th {
             background-color: #3498db;
@@ -126,7 +126,7 @@
             font-style: italic;
         }
 
-        /* Responsividade com ajustes de espaçamento */
+        /* Responsividade */
         @media (max-width: 600px) {
             body { padding: 10px; }
             h1 { font-size: 1.6rem; margin-bottom: 20px; }
@@ -140,11 +140,8 @@
             .stats { align-self: flex-end; }
             .bloco-palete { padding: 15px; margin-bottom: 20px; }
             .titulo-palete { font-size: 1.2em; }
-            table { font-size: 0.8em; min-width: 700px; }
+            table { font-size: 0.8em; min-width: 600px; }
             th, td { padding: 6px; }
-        }
-        @media (max-width: 400px) {
-            table { min-width: 600px; }
         }
     </style>
 </head>
@@ -192,15 +189,15 @@
             qtde: 'Qtde Esperada',
             validade: 'Validade',
             dataEntrada: 'Data Entrada',
+            // As colunas abaixo são usadas apenas para filtros, não serão exibidas
             recebimento: 'Recebimento',
-            local: 'Locais vinculados'       // nome da coluna de local
+            local: 'Locais vinculados'       // usada no filtro de tipo de local
         };
 
         // Função para classificar o local em congelada ou refrigerada
         function classificarLocal(localStr) {
-            if (!localStr) return 'refrigerada'; // vazio = refrigerada por padrão
+            if (!localStr) return 'refrigerada';
             const local = localStr.toUpperCase();
-            // Congelada se começar com F01, F02, F03, F04 ou conter SORVETE
             if (local.startsWith('F01') || local.startsWith('F02') || local.startsWith('F03') || local.startsWith('F04') || local.includes('SORVETE')) {
                 return 'congelada';
             }
@@ -275,7 +272,7 @@
                     }
                 }
 
-                // Filtro por tipo de local
+                // Filtro por tipo de local (usa a coluna local, mesmo não sendo exibida)
                 if (tipoLocalSelecionado !== 'todos') {
                     const local = item[COLUNAS.local] || '';
                     const categoria = classificarLocal(local);
@@ -327,8 +324,11 @@
                 html += `<div class="titulo-palete">Palete: ${num}</div>`;
                 html += `<table>`;
                 html += `<thead><tr>
-                            <th>Código</th><th>Produto</th><th>Qtde</th><th>Validade</th>
-                            <th>Data Entrada</th><th>Recebimento</th><th>Local</th>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Qtde</th>
+                            <th>Validade</th>
+                            <th>Data Entrada</th>
                         </tr></thead><tbody>`;
 
                 itens.forEach(item => {
@@ -338,8 +338,6 @@
                         <td class="qtde">${item[COLUNAS.qtde] || '0'}</td>
                         <td class="validade">${item[COLUNAS.validade] || ''}</td>
                         <td>${item[COLUNAS.dataEntrada] || ''}</td>
-                        <td>${item[COLUNAS.recebimento] || ''}</td>
-                        <td>${item[COLUNAS.local] || ''}</td>
                     </tr>`;
                 });
 
