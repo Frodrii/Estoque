@@ -15,7 +15,7 @@
         }
         .container { max-width: 1400px; margin: 0 auto; }
 
-        /* Topo com data de atualização */
+        /* Topo com data */
         .topo-data {
             text-align: center;
             background: #eef2ff;
@@ -68,7 +68,7 @@
         .conteudo-aba { display: none; }
         .conteudo-aba.ativo { display: block; }
 
-        /* Filtros não fixos (rolam normalmente) */
+        /* Filtros */
         .filtros {
             background: white;
             padding: 20px;
@@ -99,11 +99,6 @@
             transition: all 0.2s;
             background: white;
         }
-        .filtros input:focus, .filtros select:focus {
-            border-color: #2563eb;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
         .stats {
             background: #eef2f6;
             padding: 10px 16px;
@@ -117,38 +112,11 @@
             margin-top: 4px;
         }
 
-        /* Blocos e tabelas */
-        .bloco-dados, .bloco-palete {
-            background: white;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-        }
-        .titulo-palete {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #0f172a;
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 10px;
-            margin-bottom: 16px;
-        }
-        .subtitulo {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #475569;
-            margin: 12px 0 8px 0;
-            padding-left: 8px;
-            border-left: 3px solid #2563eb;
-        }
-
         /* Tabela com cabeçalho fixo */
         .tabela-wrapper {
-            position: relative;
-            max-height: 70vh;
-            overflow-y: auto;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
         }
         table {
             width: 100%;
@@ -170,13 +138,12 @@
         .ordenar-btn {
             margin-left: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             background: rgba(255,255,255,0.2);
             padding: 2px 6px;
             border-radius: 20px;
             display: inline-block;
         }
-        .ordenar-btn:hover { background: rgba(255,255,255,0.4); }
         td {
             padding: 10px 12px;
             border-bottom: 1px solid #e2e8f0;
@@ -196,13 +163,39 @@
         .erro { color: #b91c1c; background: #fee2e2; }
         .vazio { color: #475569; background: #f1f5f9; font-style: italic; }
 
+        /* Blocos para agrupamentos (usados apenas quando agrupado) */
+        .bloco-palete {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+        .titulo-palete {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f172a;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .subtitulo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 12px 0 8px;
+            padding-left: 8px;
+            border-left: 3px solid #2563eb;
+        }
+
         @media (min-width: 768px) {
             body { padding: 24px; }
             h1 { font-size: 2.2rem; margin-bottom: 16px; }
             .filtros { flex-direction: row; align-items: flex-end; padding: 24px; gap: 20px; }
             .filtros > div { flex: 1; }
             .stats { padding: 10px 24px; margin-top: 0; }
-            .bloco-dados, .bloco-palete { padding: 24px; margin-bottom: 32px; }
+            .bloco-palete { padding: 24px; margin-bottom: 32px; }
             table { font-size: 0.95rem; }
             th, td { padding: 14px 16px; }
         }
@@ -224,10 +217,7 @@
     <!-- ABA 1: Código x Balança -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
-            <div>
-                <label for="buscaCodBalanca">🔍 Buscar por Código ou Produto</label>
-                <input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..." autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..."></div>
             <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
         </div>
         <div id="statusCodBalanca">Carregando dados...</div>
@@ -237,30 +227,21 @@
     <!-- ABA 2: Estoque Virtual -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaEstoque">🔍 Buscar (Código, Nome, Fornecedor)</label>
-                <input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
             <div class="stats" id="statsEstoque">0 itens exibidos</div>
         </div>
         <div id="statusEstoque">Carregando dados...</div>
         <div id="conteudoEstoque"></div>
     </div>
 
-    <!-- ABA 3: Itens por Palete (com análise de estoque) -->
+    <!-- ABA 3: Itens por Palete (com agrupamento ou sem) -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaPalete">🔍 Buscar (código, produto, fornecedor)</label>
-                <input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA" autocomplete="off">
-            </div>
-            <div>
-                <label for="mesAnoValidade">📅 Mês/Ano de validade</label>
-                <select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select>
-            </div>
-            <div>
-                <label for="agruparPor">📂 Agrupar por</label>
+            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
+            <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos</option></select></div>
+            <div><label>📂 Agrupar por</label>
                 <select id="agruparPor">
+                    <option value="nenhum">Sem agrupamento</option>
                     <option value="palete">Palete</option>
                     <option value="data">Data Entrada</option>
                     <option value="fornecedor">Fornecedor</option>
@@ -276,10 +257,7 @@
     <!-- ABA 4: Análise de Estoque -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaAnalise">🔍 Buscar (código, produto, fornecedor)</label>
-                <input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
             <div class="stats" id="statsAnalise">0 itens analisados</div>
         </div>
         <div id="statusAnalise">Carregando dados...</div>
@@ -288,34 +266,37 @@
 </div>
 
 <script>
-    // Configuração da planilha
+    // Configurações
     const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
-    const SHEET_CODBALANCA = 'CodBalanca';
-    const SHEET_ESTOQUE = 'EstoqueVirtual';
-    const SHEET_PALETES = 'DadosLimpos';
-    const SHEET_ATUALIZADA = 'Atualizada';
+    const SHEETS = {
+        codbalanca: 'CodBalanca',
+        estoque: 'EstoqueVirtual',
+        paletes: 'DadosLimpos',
+        atualizada: 'Atualizada'
+    };
+    const URLS = {
+        codbalanca: `https://opensheet.elk.sh/${SHEET_ID}/${SHEETS.codbalanca}`,
+        estoque: `https://opensheet.elk.sh/${SHEET_ID}/${SHEETS.estoque}`,
+        paletes: `https://opensheet.elk.sh/${SHEET_ID}/${SHEETS.paletes}`,
+        atualizada: `https://opensheet.elk.sh/${SHEET_ID}/${SHEETS.atualizada}`
+    };
 
-    const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
-    const URL_ESTOQUE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ESTOQUE}`;
-    const URL_PALETES = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_PALETES}`;
-    const URL_ATUALIZADA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ATUALIZADA}`;
-
-    let dadosCodBalanca = [];
-    let dadosEstoque = [];
-    let dadosPaletes = [];
-    let dadosAtualizada = [];
+    let dados = {
+        codbalanca: [],
+        estoque: [],
+        paletes: [],
+        atualizada: []
+    };
+    let mapas = { fornecedor: {}, estoque: {}, diasSemVenda: {} };
     let ultimaAtualizacao = new Date();
 
-    // Mapa código -> fornecedor e também estoque/dias sem venda
-    let mapaFornecedor = {};
-    let mapaEstoque = {};
-    let mapaDiasSemVenda = {};
-
-    // Estados de ordenação
-    let ordenacaoCodBalanca = { coluna: 'Balanca', direcao: 'asc' };
-    let ordenacaoEstoque = { coluna: null, direcao: 'asc' };
-    let ordenacaoPaletes = { coluna: 'Codigo', direcao: 'asc' };
-    let ordenacaoAnalise = { coluna: null, direcao: 'asc' };
+    // Estados de ordenação (cada aba com seu próprio)
+    let ord = {
+        codbalanca: { coluna: 'Balanca', direcao: 'asc' },
+        estoque: { coluna: null, direcao: 'asc' },
+        paletes: { coluna: 'Codigo', direcao: 'asc' },
+        analise: { coluna: null, direcao: 'asc' }
+    };
 
     // Elementos DOM
     const topoDataDiv = document.getElementById('topoData');
@@ -326,33 +307,44 @@
         paletes: document.getElementById('aba-paletes'),
         analise: document.getElementById('aba-analise')
     };
-    const statusCod = document.getElementById('statusCodBalanca');
-    const conteudoCod = document.getElementById('conteudoCodBalanca');
-    const statusEst = document.getElementById('statusEstoque');
-    const conteudoEst = document.getElementById('conteudoEstoque');
-    const statusPal = document.getElementById('statusPalete');
-    const conteudoPal = document.getElementById('conteudoPalete');
-    const statusAnalise = document.getElementById('statusAnalise');
-    const conteudoAnalise = document.getElementById('conteudoAnalise');
-    const buscaCodInput = document.getElementById('buscaCodBalanca');
-    const buscaEstInput = document.getElementById('buscaEstoque');
-    const buscaPalInput = document.getElementById('buscaPalete');
-    const buscaAnaliseInput = document.getElementById('buscaAnalise');
+
+    // Campos de busca e stats
+    const busca = {
+        codbalanca: document.getElementById('buscaCodBalanca'),
+        estoque: document.getElementById('buscaEstoque'),
+        paletes: document.getElementById('buscaPalete'),
+        analise: document.getElementById('buscaAnalise')
+    };
+    const stats = {
+        codbalanca: document.getElementById('statsCodBalanca'),
+        estoque: document.getElementById('statsEstoque'),
+        paletes: document.getElementById('statsPalete'),
+        analise: document.getElementById('statsAnalise')
+    };
+    const statusDivs = {
+        codbalanca: document.getElementById('statusCodBalanca'),
+        estoque: document.getElementById('statusEstoque'),
+        paletes: document.getElementById('statusPalete'),
+        analise: document.getElementById('statusAnalise')
+    };
+    const conteudoDivs = {
+        codbalanca: document.getElementById('conteudoCodBalanca'),
+        estoque: document.getElementById('conteudoEstoque'),
+        paletes: document.getElementById('conteudoPalete'),
+        analise: document.getElementById('conteudoAnalise')
+    };
+
     const mesAnoSelect = document.getElementById('mesAnoValidade');
     const agruparPorSelect = document.getElementById('agruparPor');
-    const statsCodSpan = document.getElementById('statsCodBalanca');
-    const statsEstSpan = document.getElementById('statsEstoque');
-    const statsPalSpan = document.getElementById('statsPalete');
-    const statsAnaliseSpan = document.getElementById('statsAnalise');
 
-    // ==================== FUNÇÕES AUXILIARES ====================
+    // Funções auxiliares
     function formatarDataBrasil(data) {
         if (!data) return '';
         try {
             const d = new Date(data);
             if (isNaN(d.getTime())) return data;
             return d.toLocaleDateString('pt-BR');
-        } catch (e) { return data; }
+        } catch { return data; }
     }
 
     function parseDataBrasil(str) {
@@ -366,19 +358,19 @@
         return new Date(ano, mes, dia);
     }
 
-    function ordenarDados(dados, coluna, direcao, tipo = 'auto') {
-        if (!coluna) return dados;
-        return [...dados].sort((a, b) => {
-            let valA = a[coluna] !== undefined ? a[coluna] : '';
-            let valB = b[coluna] !== undefined ? b[coluna] : '';
-            if (tipo === 'numero') {
-                valA = parseFloat(valA.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                valB = parseFloat(valB.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                return direcao === 'asc' ? valA - valB : valB - valA;
+    function ordenarDados(arr, coluna, direcao, isNumber = false) {
+        if (!coluna) return arr;
+        return [...arr].sort((a, b) => {
+            let va = a[coluna] !== undefined ? a[coluna] : '';
+            let vb = b[coluna] !== undefined ? b[coluna] : '';
+            if (isNumber) {
+                va = parseFloat(va.toString().replace(/\./g, '').replace(',', '.')) || 0;
+                vb = parseFloat(vb.toString().replace(/\./g, '').replace(',', '.')) || 0;
+                return direcao === 'asc' ? va - vb : vb - va;
             } else {
-                valA = valA.toString().toLowerCase();
-                valB = valB.toString().toLowerCase();
-                return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                va = va.toString().toLowerCase();
+                vb = vb.toString().toLowerCase();
+                return direcao === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
             }
         });
     }
@@ -387,183 +379,160 @@
         topoDataDiv.innerHTML = `📅 Última atualização dos dados: ${ultimaAtualizacao.toLocaleString('pt-BR')}`;
     }
 
-    // ==================== CARREGAR DADOS ====================
+    // Carregar dados da aba Atualizada
     async function carregarAtualizada() {
         try {
-            const resp = await fetch(URL_ATUALIZADA);
+            const resp = await fetch(URLS.atualizada);
             if (resp.ok) {
-                dadosAtualizada = await resp.json();
-                if (dadosAtualizada.length && dadosAtualizada[0]['atualizada']) {
-                    const dataRaw = dadosAtualizada[0]['atualizada'];
+                dados.atualizada = await resp.json();
+                if (dados.atualizada.length && dados.atualizada[0]['atualizada']) {
+                    const dataRaw = dados.atualizada[0]['atualizada'];
                     const parsed = parseDataBrasil(dataRaw);
                     if (parsed && !isNaN(parsed.getTime())) ultimaAtualizacao = parsed;
                     else ultimaAtualizacao = new Date();
                     atualizarTopoData();
                 }
             }
-        } catch (e) { console.warn('Aba Atualizada não encontrada', e); }
+        } catch (e) { console.warn('Aba Atualizada não encontrada'); }
     }
 
-    async function carregarCodBalanca() {
-        try {
-            const resp = await fetch(URL_CODBALANCA);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosCodBalanca = await resp.json();
-            if (!dadosCodBalanca.length) throw new Error('Nenhum dado na aba CodBalanca');
-            aplicarFiltroCodBalanca();
-            statusCod.style.display = 'none';
-        } catch (err) {
-            statusCod.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
-        }
-    }
-    function aplicarFiltroCodBalanca() {
-        const termo = buscaCodInput.value.trim().toLowerCase();
-        let filtrados = dadosCodBalanca;
-        if (termo) {
-            filtrados = dadosCodBalanca.filter(i => {
-                const cod = (i['Cod'] || '').toString().toLowerCase();
-                const prod = (i['Produto'] || '').toLowerCase();
-                return cod.includes(termo) || prod.includes(termo);
-            });
-        }
-        statsCodSpan.textContent = `${filtrados.length} itens encontrados`;
-        renderizarCodBalanca(filtrados);
-    }
-    function renderizarCodBalanca(itens) {
-        if (!itens.length) {
-            conteudoCod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
-            return;
-        }
-        let ordenados = ordenarDados(itens, ordenacaoCodBalanca.coluna, ordenacaoCodBalanca.direcao);
-        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead><tr>`;
-        html += `<th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>`;
-        html += `<th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>`;
-        html += `<th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>`;
-        html += `</tr></thead><tbody>`;
-        ordenados.forEach(i => {
-            html += `<tr>
-                        <td>${i['Balanca'] || ''}</td>
-                        <td>${i['Cod'] || ''}</td>
-                        <td>${i['Produto'] || ''}</td>
-                     </tr>`;
-        });
-        html += `</tbody></table></div>`;
-        conteudoCod.innerHTML = html;
-        document.querySelectorAll('#tabela-codbalanca th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                if (ordenacaoCodBalanca.coluna === col) {
-                    ordenacaoCodBalanca.direcao = ordenacaoCodBalanca.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacaoCodBalanca.coluna = col;
-                    ordenacaoCodBalanca.direcao = 'asc';
-                }
-                aplicarFiltroCodBalanca();
-            });
-        });
-    }
-
+    // Carregar dados de estoque e popular mapas
     async function carregarEstoque() {
         try {
-            const resp = await fetch(URL_ESTOQUE);
+            const resp = await fetch(URLS.estoque);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosEstoque = await resp.json();
-            if (!dadosEstoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
-            // Preenche mapas
-            mapaFornecedor = {};
-            mapaEstoque = {};
-            mapaDiasSemVenda = {};
-            dadosEstoque.forEach(i => {
+            dados.estoque = await resp.json();
+            if (!dados.estoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
+            mapas.fornecedor = {};
+            mapas.estoque = {};
+            mapas.diasSemVenda = {};
+            dados.estoque.forEach(i => {
                 const cod = i['Codigo']?.toString();
                 if (cod) {
-                    mapaFornecedor[cod] = i['Fornecedor'] || '';
-                    mapaEstoque[cod] = parseFloat(i['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                    mapaDiasSemVenda[cod] = parseInt(i['Dias sem venda']) || 0;
+                    mapas.fornecedor[cod] = i['Fornecedor'] || '';
+                    mapas.estoque[cod] = parseFloat(i['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
+                    mapas.diasSemVenda[cod] = parseInt(i['Dias sem venda']) || 0;
                 }
             });
-            aplicarFiltroEstoque();
-            statusEst.style.display = 'none';
+            return true;
         } catch (err) {
-            statusEst.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+            statusDivs.estoque.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+            return false;
         }
     }
-    function aplicarFiltroEstoque() {
-        const termo = buscaEstInput.value.trim().toLowerCase();
-        let filtrados = dadosEstoque;
-        if (termo) {
-            filtrados = dadosEstoque.filter(i => {
-                const cod = (i['Codigo'] || '').toString().toLowerCase();
-                const nome = (i['Nome'] || '').toLowerCase();
-                const forn = (i['Fornecedor'] || '').toLowerCase();
-                return cod.includes(termo) || nome.includes(termo) || forn.includes(termo);
-            });
+
+    // ==================== ABA 1: Código x Balança ====================
+    async function carregarCodBalanca() {
+        try {
+            const resp = await fetch(URLS.codbalanca);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            dados.codbalanca = await resp.json();
+            if (!dados.codbalanca.length) throw new Error('Nenhum dado na aba CodBalanca');
+            aplicarFiltroCodBalanca();
+            statusDivs.codbalanca.style.display = 'none';
+        } catch (err) {
+            statusDivs.codbalanca.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
         }
-        statsEstSpan.textContent = `${filtrados.length} itens exibidos`;
-        renderizarEstoque(filtrados);
     }
-    function renderizarEstoque(itens) {
+
+    function aplicarFiltroCodBalanca() {
+        const termo = busca.codbalanca.value.trim().toLowerCase();
+        let filtrados = dados.codbalanca.filter(i => {
+            if (!termo) return true;
+            const cod = (i['Cod'] || '').toString().toLowerCase();
+            const prod = (i['Produto'] || '').toLowerCase();
+            return cod.includes(termo) || prod.includes(termo);
+        });
+        stats.codbalanca.textContent = `${filtrados.length} itens encontrados`;
+        renderizarTabelaCodBalanca(filtrados);
+    }
+
+    function renderizarTabelaCodBalanca(itens) {
         if (!itens.length) {
-            conteudoEst.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            conteudoDivs.codbalanca.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
             return;
         }
-        let ordenados = ordenarDados(itens, ordenacaoEstoque.coluna, ordenacaoEstoque.direcao);
-        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>`;
-        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Classe de Produto', 'Fornecedor'];
-        colunas.forEach(col => {
-            html += `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`;
-        });
-        html += `</tr></thead><tbody>`;
-        ordenados.forEach(i => {
-            html += `<tr>
-                        <td>${i['Codigo'] || ''}</td>
-                        <td>${i['Nome'] || ''}</td>
-                        <td class="qtde">${i['Estoque'] || '0'}</td>
-                        <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                        <td>${i['Última venda'] || ''}</td>
-                        <td>${i['Última Compra'] || ''}</td>
-                        <td>${i['Classe de Produto'] || ''}</td>
-                        <td>${i['Fornecedor'] || ''}</td>
-                     </tr>`;
-        });
-        html += `</tbody></table></div>`;
-        conteudoEst.innerHTML = html;
-        document.querySelectorAll('#tabela-estoque th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                if (ordenacaoEstoque.coluna === col) {
-                    ordenacaoEstoque.direcao = ordenacaoEstoque.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacaoEstoque.coluna = col;
-                    ordenacaoEstoque.direcao = 'asc';
-                }
-                aplicarFiltroEstoque();
-            });
-        });
+        const ordenados = ordenarDados(itens, ord.codbalanca.coluna, ord.codbalanca.direcao);
+        const html = `
+            <div class="tabela-wrapper">
+                <table id="tabela-codbalanca">
+                    <thead><tr>
+                        <th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>
+                        <th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>
+                        <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+                    </tr></thead>
+                    <tbody>
+                        ${ordenados.map(i => `<tr>
+                            <td>${i['Balanca'] || ''}</td>
+                            <td>${i['Cod'] || ''}</td>
+                            <td>${i['Produto'] || ''}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        conteudoDivs.codbalanca.innerHTML = html;
+        attachOrdenacao('tabela-codbalanca', 'codbalanca');
     }
 
+    // ==================== ABA 2: Estoque Virtual ====================
+    function aplicarFiltroEstoque() {
+        const termo = busca.estoque.value.trim().toLowerCase();
+        let filtrados = dados.estoque.filter(i => {
+            if (!termo) return true;
+            const cod = (i['Codigo'] || '').toString().toLowerCase();
+            const nome = (i['Nome'] || '').toLowerCase();
+            const forn = (i['Fornecedor'] || '').toLowerCase();
+            return cod.includes(termo) || nome.includes(termo) || forn.includes(termo);
+        });
+        stats.estoque.textContent = `${filtrados.length} itens exibidos`;
+        renderizarTabelaEstoque(filtrados);
+    }
+
+    function renderizarTabelaEstoque(itens) {
+        if (!itens.length) {
+            conteudoDivs.estoque.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            return;
+        }
+        const ordenados = ordenarDados(itens, ord.estoque.coluna, ord.estoque.direcao);
+        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Classe de Produto', 'Fornecedor'];
+        const html = `
+            <div class="tabela-wrapper">
+                <table id="tabela-estoque">
+                    <thead><tr>
+                        ${colunas.map(col => `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`).join('')}
+                    </tr></thead>
+                    <tbody>
+                        ${ordenados.map(i => `<tr>
+                            <td>${i['Codigo'] || ''}</td>
+                            <td>${i['Nome'] || ''}</td>
+                            <td class="qtde">${i['Estoque'] || '0'}</td>
+                            <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                            <td>${i['Última venda'] || ''}</td>
+                            <td>${i['Última Compra'] || ''}</td>
+                            <td>${i['Classe de Produto'] || ''}</td>
+                            <td>${i['Fornecedor'] || ''}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        conteudoDivs.estoque.innerHTML = html;
+        attachOrdenacao('tabela-estoque', 'estoque');
+    }
+
+    // ==================== ABA 3: Itens por Palete ====================
     async function carregarPaletes() {
         try {
-            const resp = await fetch(URL_PALETES);
+            const resp = await fetch(URLS.paletes);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosPaletes = await resp.json();
-            if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
+            dados.paletes = await resp.json();
+            if (!dados.paletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
 
-            if (!dadosEstoque.length) {
-                const respEst = await fetch(URL_ESTOQUE);
-                if (respEst.ok) dadosEstoque = await respEst.json();
-            }
-            // Garantir mapas
-            dadosEstoque.forEach(i => {
-                const cod = i['Codigo']?.toString();
-                if (cod) {
-                    mapaFornecedor[cod] = i['Fornecedor'] || '';
-                    mapaEstoque[cod] = parseFloat(i['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                    mapaDiasSemVenda[cod] = parseInt(i['Dias sem venda']) || 0;
-                }
-            });
+            // Garantir que os mapas estejam preenchidos
+            if (!dados.estoque.length) await carregarEstoque();
 
+            // Preencher meses/ano
             const mesesAnos = new Set();
-            dadosPaletes.forEach(i => {
+            dados.paletes.forEach(i => {
                 const val = i['Validade'];
                 if (val && val.includes('/')) {
                     const p = val.split('/');
@@ -583,17 +552,17 @@
             });
 
             aplicarFiltroPaletes();
-            statusPal.style.display = 'none';
+            statusDivs.paletes.style.display = 'none';
         } catch (err) {
-            statusPal.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+            statusDivs.paletes.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
         }
     }
 
     function aplicarFiltroPaletes() {
-        const termo = buscaPalInput.value.trim().toLowerCase();
+        const termo = busca.paletes.value.trim().toLowerCase();
         const mesAno = mesAnoSelect.value;
 
-        let filtrados = dadosPaletes.filter(i => {
+        let filtrados = dados.paletes.filter(i => {
             if (mesAno !== 'todos') {
                 const val = i['Validade'] || '';
                 const partes = val.split('/');
@@ -605,23 +574,49 @@
             if (termo) {
                 const cod = (i['Codigo'] || '').toString().toLowerCase();
                 const prod = (i['Produto'] || '').toLowerCase();
-                const forn = (mapaFornecedor[i['Codigo']] || '').toLowerCase();
+                const forn = (mapas.fornecedor[i['Codigo']] || '').toLowerCase();
                 return cod.includes(termo) || prod.includes(termo) || forn.includes(termo);
             }
             return true;
         });
 
-        filtrados = ordenarDados(filtrados, ordenacaoPaletes.coluna, ordenacaoPaletes.direcao);
-        statsPalSpan.textContent = `${filtrados.length} itens exibidos`;
-        renderizarPaletes(filtrados);
+        stats.paletes.textContent = `${filtrados.length} itens exibidos`;
+        const agrupar = agruparPorSelect.value;
+        const ordenados = ordenarDados(filtrados, ord.paletes.coluna, ord.paletes.direcao);
+        renderizarPaletes(ordenados, agrupar);
     }
 
-    function renderizarPaletes(itens) {
+    function renderizarPaletes(itens, agrupar) {
         if (!itens.length) {
-            conteudoPal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
+            conteudoDivs.paletes.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
             return;
         }
-        const agrupar = agruparPorSelect.value;
+
+        if (agrupar === 'nenhum') {
+            // Tabela única sem agrupamento
+            const html = `
+                <div class="tabela-wrapper">
+                    <table id="tabela-paletes-single">
+                        <thead><tr>
+                            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+                            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+                            <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
+                            <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
+                            <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
+                            <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
+                            <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+                        </tr></thead>
+                        <tbody>
+                            ${itens.map(item => renderLinhaPalete(item)).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            conteudoDivs.paletes.innerHTML = html;
+            attachOrdenacao('tabela-paletes-single', 'paletes');
+            return;
+        }
+
+        // Agrupamento
         if (agrupar === 'data_fornecedor') {
             const gruposData = {};
             for (const item of itens) {
@@ -641,17 +636,16 @@
                 const itensData = gruposData[data];
                 const gruposForn = {};
                 for (const item of itensData) {
-                    const forn = mapaFornecedor[item['Codigo']] || 'Não informado';
+                    const forn = mapas.fornecedor[item['Codigo']] || 'Não informado';
                     if (!gruposForn[forn]) gruposForn[forn] = [];
                     gruposForn[forn].push(item);
                 }
                 const fornsOrdenadas = Object.keys(gruposForn).sort();
-                html += `<div class="bloco-palete">`;
-                html += `<div class="titulo-palete">Data Entrada: ${data}</div>`;
+                html += `<div class="bloco-palete"><div class="titulo-palete">Data Entrada: ${data}</div>`;
                 for (const forn of fornsOrdenadas) {
                     const itensForn = gruposForn[forn];
                     html += `<div class="subtitulo">Fornecedor: ${forn}</div>`;
-                    html += `<div class="tabela-wrapper"><table><thead><tr>
+                    html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead><tr>
                                 <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
                                 <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
                                 <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
@@ -659,44 +653,14 @@
                                 <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                                 <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
                                 <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                               </tr></thead><tbody>`;
-                    for (const item of itensForn) {
-                        const cod = item['Codigo']?.toString();
-                        const estoqueAtual = mapaEstoque[cod] || 0;
-                        const diasSemVenda = mapaDiasSemVenda[cod] || 0;
-                        let sugestao = '';
-                        let classe = '';
-                        if (estoqueAtual > 0 && diasSemVenda > 60) {
-                            sugestao = '⚠️ Baixo giro';
-                            classe = 'negativo';
-                        } else if (parseFloat(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                            sugestao = '📦 Excesso de entrada';
-                            classe = 'atencao';
-                        } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                            sugestao = '🔄 Prioridade de venda';
-                            classe = 'positivo';
-                        } else {
-                            sugestao = 'OK';
-                        }
-                        const fornItem = mapaFornecedor[cod] || '';
-                        html += `<tr class="${classe}">
-                                    <td class="codigo">${item['Codigo'] || ''}</td>
-                                    <td>${item['Produto'] || ''}</td>
-                                    <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                                    <td>${item['Validade'] || ''}</td>
-                                    <td>${item['Data Entrada'] || ''}</td>
-                                    <td>${fornItem}</td>
-                                    <td class="qtde">${estoqueAtual}</td>
-                                    <td class="qtde">${diasSemVenda}</td>
-                                    <td>${sugestao}</td>
-                                 </tr>`;
-                    }
+                            </tr></thead><tbody>`;
+                    for (const item of itensForn) html += renderLinhaPalete(item);
                     html += `</tbody></table></div>`;
                 }
                 html += `</div>`;
             }
-            conteudoPal.innerHTML = html;
-            attachOrdenacaoPaletes();
+            conteudoDivs.paletes.innerHTML = html;
+            attachOrdenacao('.tabela-palete-grupo', 'paletes');
             return;
         }
 
@@ -706,7 +670,7 @@
             let chave;
             if (agrupar === 'palete') chave = item['Palete'] || 'SEM PALETE';
             else if (agrupar === 'data') chave = item['Data Entrada'] || 'Sem data';
-            else chave = mapaFornecedor[item['Codigo']] || 'Não informado';
+            else chave = mapas.fornecedor[item['Codigo']] || 'Não informado';
             if (!grupos[chave]) grupos[chave] = [];
             grupos[chave].push(item);
         }
@@ -731,7 +695,7 @@
             const itensGrupo = grupos[chave];
             html += `<div class="bloco-palete">`;
             html += `<div class="titulo-palete">${agrupar === 'palete' ? 'Palete' : agrupar === 'data' ? 'Data Entrada' : 'Fornecedor'}: ${chave}</div>`;
-            html += `<div class="tabela-wrapper"><table><thead><tr>
+            html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead><tr>
                         <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
                         <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
                         <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
@@ -739,89 +703,58 @@
                         <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                         <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
                         <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                       </tr></thead><tbody>`;
-            for (const item of itensGrupo) {
-                const cod = item['Codigo']?.toString();
-                const estoqueAtual = mapaEstoque[cod] || 0;
-                const diasSemVenda = mapaDiasSemVenda[cod] || 0;
-                let sugestao = '';
-                let classe = '';
-                if (estoqueAtual > 0 && diasSemVenda > 60) {
-                    sugestao = '⚠️ Baixo giro';
-                    classe = 'negativo';
-                } else if (parseFloat(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                    sugestao = '📦 Excesso de entrada';
-                    classe = 'atencao';
-                } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                    sugestao = '🔄 Prioridade de venda';
-                    classe = 'positivo';
-                } else {
-                    sugestao = 'OK';
-                }
-                const fornItem = mapaFornecedor[cod] || '';
-                html += `<tr class="${classe}">
-                            <td class="codigo">${item['Codigo'] || ''}</td>
-                            <td>${item['Produto'] || ''}</td>
-                            <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                            <td>${item['Validade'] || ''}</td>
-                            <td>${item['Data Entrada'] || ''}</td>
-                            <td>${fornItem}</td>
-                            <td class="qtde">${estoqueAtual}</td>
-                            <td class="qtde">${diasSemVenda}</td>
-                            <td>${sugestao}</td>
-                         </tr>`;
-            }
+                    </tr></thead><tbody>`;
+            for (const item of itensGrupo) html += renderLinhaPalete(item);
             html += `</tbody></table></div></div>`;
         }
-        conteudoPal.innerHTML = html;
-        attachOrdenacaoPaletes();
+        conteudoDivs.paletes.innerHTML = html;
+        attachOrdenacao('.tabela-palete-grupo', 'paletes');
     }
 
-    function attachOrdenacaoPaletes() {
-        document.querySelectorAll('#conteudoPalete .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const coluna = btn.dataset.coluna;
-                if (ordenacaoPaletes.coluna === coluna) {
-                    ordenacaoPaletes.direcao = ordenacaoPaletes.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacaoPaletes.coluna = coluna;
-                    ordenacaoPaletes.direcao = 'asc';
-                }
-                aplicarFiltroPaletes();
-            });
-        });
-    }
-
-    // ==================== ABA 4: ANÁLISE DE ESTOQUE ====================
-    function carregarAnalise() {
-        if (!dadosEstoque.length) {
-            carregarEstoque().then(() => {
-                aplicarFiltroAnalise();
-                statusAnalise.style.display = 'none';
-            });
+    function renderLinhaPalete(item) {
+        const cod = item['Codigo']?.toString();
+        const estoqueAtual = mapas.estoque[cod] || 0;
+        const diasSemVenda = mapas.diasSemVenda[cod] || 0;
+        let sugestao = '', classe = '';
+        const qtdePalete = parseFloat(item['Qtde Esperada']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
+        if (estoqueAtual > 0 && diasSemVenda > 60) {
+            sugestao = '⚠️ Baixo giro';
+            classe = 'negativo';
+        } else if (qtdePalete > estoqueAtual * 1.2 && estoqueAtual > 0) {
+            sugestao = '📦 Excesso de entrada';
+            classe = 'atencao';
+        } else if (estoqueAtual === 0 && diasSemVenda > 30) {
+            sugestao = '🔄 Prioridade de venda';
+            classe = 'positivo';
         } else {
-            aplicarFiltroAnalise();
-            statusAnalise.style.display = 'none';
+            sugestao = 'OK';
         }
+        const forn = mapas.fornecedor[cod] || '';
+        return `<tr class="${classe}">
+            <td class="codigo">${item['Codigo'] || ''}</td>
+            <td>${item['Produto'] || ''}</td>
+            <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
+            <td>${item['Validade'] || ''}</td>
+            <td>${item['Data Entrada'] || ''}</td>
+            <td>${forn}</td>
+            <td class="qtde">${estoqueAtual}</td>
+            <td class="qtde">${diasSemVenda}</td>
+            <td>${sugestao}</td>
+        </tr>`;
+    }
+
+    // ==================== ABA 4: Análise de Estoque ====================
+    function carregarAnalise() {
+        if (!dados.estoque.length) carregarEstoque().then(() => aplicarFiltroAnalise());
+        else aplicarFiltroAnalise();
+        statusDivs.analise.style.display = 'none';
     }
 
     function aplicarFiltroAnalise() {
-        const termo = buscaAnaliseInput.value.trim().toLowerCase();
+        const termo = busca.analise.value.trim().toLowerCase();
         const hoje = new Date();
-
-        function parseDataBrasil(str) {
-            if (!str) return null;
-            const partes = str.split('/');
-            if (partes.length !== 3) return null;
-            const dia = parseInt(partes[0], 10);
-            const mes = parseInt(partes[1], 10) - 1;
-            const ano = parseInt(partes[2], 10);
-            if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return null;
-            return new Date(ano, mes, dia);
-        }
-
         const analise = [];
-        for (const est of dadosEstoque) {
+        for (const est of dados.estoque) {
             const cod = est['Codigo']?.toString();
             if (!cod) continue;
             const estoque = parseFloat(est['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
@@ -830,8 +763,7 @@
             const ultimaCompraDate = parseDataBrasil(ultimaCompraStr);
             const diasUltimaCompra = ultimaCompraDate ? Math.floor((hoje - ultimaCompraDate) / (1000 * 3600 * 24)) : null;
 
-            let sugestao = 'OK';
-            let motivo = '';
+            let sugestao = 'OK', motivo = '';
             if (estoque > 0 && diasSemVenda > 60) {
                 sugestao = '⚠️ Baixo giro';
                 motivo = `Dias sem venda: ${diasSemVenda}`;
@@ -842,85 +774,93 @@
                 sugestao = 'ℹ️ Sem estoque, mas com venda há mais de 30 dias';
                 motivo = `Dias sem venda: ${diasSemVenda}`;
             }
-
             analise.push({
                 codigo: cod,
                 nome: est['Nome'] || '',
                 fornecedor: est['Fornecedor'] || '',
-                estoque: estoque,
-                diasSemVenda: diasSemVenda,
-                ultimaCompra: ultimaCompraStr,
-                sugestao: sugestao,
-                motivo: motivo
+                estoque, diasSemVenda, ultimaCompra: ultimaCompraStr,
+                sugestao, motivo
             });
         }
 
         let filtrados = analise;
         if (termo) {
-            filtrados = analise.filter(a => {
-                return a.codigo.includes(termo) || a.nome.toLowerCase().includes(termo) || a.fornecedor.toLowerCase().includes(termo);
-            });
+            filtrados = analise.filter(a => a.codigo.includes(termo) || a.nome.toLowerCase().includes(termo) || a.fornecedor.toLowerCase().includes(termo));
         }
-
-        // Ordenação (se houver coluna selecionada)
-        if (ordenacaoAnalise.coluna) {
-            filtrados = ordenarDados(filtrados, ordenacaoAnalise.coluna, ordenacaoAnalise.direcao);
+        if (ord.analise.coluna) {
+            filtrados = ordenarDados(filtrados, ord.analise.coluna, ord.analise.direcao,
+                ord.analise.coluna === 'estoque' || ord.analise.coluna === 'diasSemVenda');
         } else {
-            // Default: itens com sugestão primeiro
-            filtrados.sort((a, b) => {
+            filtrados.sort((a,b) => {
                 if (a.sugestao !== 'OK' && b.sugestao === 'OK') return -1;
                 if (a.sugestao === 'OK' && b.sugestao !== 'OK') return 1;
                 return b.diasSemVenda - a.diasSemVenda;
             });
         }
-
-        statsAnaliseSpan.textContent = `${filtrados.length} itens analisados`;
-
+        stats.analise.textContent = `${filtrados.length} itens analisados`;
         if (!filtrados.length) {
-            conteudoAnalise.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
+            conteudoDivs.analise.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-analise"><thead><tr>
-            <th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th>
-            <th>Produto <span class="ordenar-btn" data-coluna="nome">⇅</span></th>
-            <th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th>
-            <th>Estoque <span class="ordenar-btn" data-coluna="estoque">⇅</span></th>
-            <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
-            <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
-            <th>Sugestão</th><th>Detalhe</th>
-         </tr></thead><tbody>`;
-        for (const a of filtrados) {
-            let classe = a.sugestao !== 'OK' ? 'negativo' : '';
-            html += `<tr class="${classe}">
-                         <td>${a.codigo}</td>
-                         <td>${a.nome}</td>
-                         <td>${a.fornecedor}</td>
-                         <td class="qtde">${a.estoque}</td>
-                         <td class="qtde">${a.diasSemVenda}</td>
-                         <td>${a.ultimaCompra}</td>
-                         <td>${a.sugestao}</td>
-                         <td>${a.motivo}</td>
-                       </tr>`;
-        }
-        html += `</tbody></table></div>`;
-        conteudoAnalise.innerHTML = html;
+        const html = `
+            <div class="tabela-wrapper">
+                <table id="tabela-analise">
+                    <thead><tr>
+                        <th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th>
+                        <th>Produto <span class="ordenar-btn" data-coluna="nome">⇅</span></th>
+                        <th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th>
+                        <th>Estoque <span class="ordenar-btn" data-coluna="estoque">⇅</span></th>
+                        <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
+                        <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
+                        <th>Sugestão</th><th>Detalhe</th>
+                    </tr></thead>
+                    <tbody>
+                        ${filtrados.map(a => `<tr class="${a.sugestao !== 'OK' ? 'negativo' : ''}">
+                            <td>${a.codigo}</td><td>${a.nome}</td><td>${a.fornecedor}</td>
+                            <td class="qtde">${a.estoque}</td><td class="qtde">${a.diasSemVenda}</td>
+                            <td>${a.ultimaCompra}</td><td>${a.sugestao}</td><td>${a.motivo}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        conteudoDivs.analise.innerHTML = html;
+        attachOrdenacao('tabela-analise', 'analise');
+    }
 
-        document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                if (ordenacaoAnalise.coluna === col) {
-                    ordenacaoAnalise.direcao = ordenacaoAnalise.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacaoAnalise.coluna = col;
-                    ordenacaoAnalise.direcao = 'asc';
+    // Função genérica para anexar eventos de ordenação
+    function attachOrdenacao(tabelaSelector, abaKey) {
+        const tabelas = document.querySelectorAll(tabelaSelector);
+        tabelas.forEach(tabela => {
+            tabela.querySelectorAll('th .ordenar-btn').forEach(btn => {
+                btn.removeEventListener('click', ordenacaoHandler);
+                btn.addEventListener('click', ordenacaoHandler);
+                function ordenacaoHandler(e) {
+                    const coluna = btn.dataset.coluna;
+                    if (ord[abaKey].coluna === coluna) {
+                        ord[abaKey].direcao = ord[abaKey].direcao === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        ord[abaKey].coluna = coluna;
+                        ord[abaKey].direcao = 'asc';
+                    }
+                    if (abaKey === 'codbalanca') aplicarFiltroCodBalanca();
+                    else if (abaKey === 'estoque') aplicarFiltroEstoque();
+                    else if (abaKey === 'paletes') aplicarFiltroPaletes();
+                    else if (abaKey === 'analise') aplicarFiltroAnalise();
                 }
-                aplicarFiltroAnalise();
             });
         });
     }
 
-    // ==================== EVENTOS DE ABA ====================
+    // Eventos de busca
+    busca.codbalanca.addEventListener('input', aplicarFiltroCodBalanca);
+    busca.estoque.addEventListener('input', aplicarFiltroEstoque);
+    busca.paletes.addEventListener('input', aplicarFiltroPaletes);
+    busca.analise.addEventListener('input', aplicarFiltroAnalise);
+    mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
+    agruparPorSelect.addEventListener('change', aplicarFiltroPaletes);
+
+    // Troca de abas
     function trocarAba(abaId) {
         for (const [id, el] of Object.entries(conteudos)) {
             if (id === abaId) el.classList.add('ativo');
@@ -934,16 +874,9 @@
     }
     abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
 
-    buscaCodInput.addEventListener('input', aplicarFiltroCodBalanca);
-    buscaEstInput.addEventListener('input', aplicarFiltroEstoque);
-    buscaPalInput.addEventListener('input', aplicarFiltroPaletes);
-    buscaAnaliseInput.addEventListener('input', aplicarFiltroAnalise);
-    mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
-    agruparPorSelect.addEventListener('change', aplicarFiltroPaletes);
-
     // Inicialização
     Promise.all([carregarAtualizada(), carregarCodBalanca(), carregarEstoque(), carregarPaletes()]).then(() => {
-        if (!dadosAtualizada.length || !dadosAtualizada[0]['atualizada']) {
+        if (!dados.atualizada.length || !dados.atualizada[0]['atualizada']) {
             ultimaAtualizacao = new Date();
             atualizarTopoData();
         }
