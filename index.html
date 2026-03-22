@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>📊 Consulta de Produtos</title>
+    <title>📊 Sistema de Consulta</title>
     <style>
         * {
             box-sizing: border-box;
@@ -39,13 +39,14 @@
             margin-bottom: 24px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 8px;
+            flex-wrap: wrap;
         }
 
         .aba-btn {
             background: none;
             border: none;
-            padding: 12px 24px;
-            font-size: 1rem;
+            padding: 10px 20px;
+            font-size: 0.95rem;
             font-weight: 600;
             color: #64748b;
             cursor: pointer;
@@ -94,7 +95,8 @@
             text-transform: uppercase;
         }
 
-        .filtros input {
+        .filtros input,
+        .filtros select {
             width: 100%;
             padding: 12px 16px;
             font-size: 1rem;
@@ -105,7 +107,8 @@
             background: white;
         }
 
-        .filtros input:focus {
+        .filtros input:focus,
+        .filtros select:focus {
             border-color: #2563eb;
             outline: none;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -124,8 +127,8 @@
             margin-top: 4px;
         }
 
-        /* Tabelas */
-        .bloco-dados {
+        /* Blocos */
+        .bloco-dados, .bloco-palete {
             background: white;
             border-radius: 16px;
             margin-bottom: 20px;
@@ -135,12 +138,20 @@
             border: 1px solid #e2e8f0;
         }
 
+        .titulo-palete {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f172a;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
             min-width: 600px;
-            font-family: inherit;
         }
 
         th {
@@ -158,6 +169,11 @@
             white-space: nowrap;
         }
 
+        .codigo, .qtde {
+            text-align: right;
+            font-family: monospace;
+        }
+
         .erro, .vazio {
             text-align: center;
             padding: 40px 16px;
@@ -169,7 +185,6 @@
         .erro {
             color: #b91c1c;
             background: #fee2e2;
-            border: 1px solid #fecaca;
         }
 
         .vazio {
@@ -199,7 +214,7 @@
                 padding: 10px 24px;
                 margin-top: 0;
             }
-            .bloco-dados {
+            .bloco-dados, .bloco-palete {
                 padding: 24px;
                 margin-bottom: 32px;
             }
@@ -213,211 +228,339 @@
 
         @media (max-width: 480px) {
             .aba-btn {
-                padding: 8px 16px;
-                font-size: 0.9rem;
+                padding: 8px 14px;
+                font-size: 0.85rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📊 Consulta de Produtos</h1>
+<div class="container">
+    <h1>📊 Sistema de Consulta</h1>
 
-        <div class="abas">
-            <button class="aba-btn ativo" data-aba="codbalanca">⚖️ Código x Balança</button>
-            <button class="aba-btn" data-aba="estoquevirtual">📦 Estoque Virtual</button>
-        </div>
-
-        <div id="aba-codbalanca" class="conteudo-aba ativo">
-            <div class="filtros">
-                <div>
-                    <label for="buscaCodBalanca">🔍 Buscar por Código ou Produto</label>
-                    <input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..." autocomplete="off">
-                </div>
-                <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
-            </div>
-            <div id="statusCodBalanca">Carregando dados...</div>
-            <div id="conteudoCodBalanca"></div>
-        </div>
-
-        <div id="aba-estoquevirtual" class="conteudo-aba">
-            <div class="filtros">
-                <div>
-                    <label for="buscaEstoque">🔍 Buscar (Código, Nome, Fornecedor)</label>
-                    <input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
-                </div>
-                <div class="stats" id="statsEstoque">0 itens exibidos</div>
-            </div>
-            <div id="statusEstoque">Carregando dados...</div>
-            <div id="conteudoEstoque"></div>
-        </div>
+    <div class="abas">
+        <button class="aba-btn ativo" data-aba="codbalanca">⚖️ Código x Balança</button>
+        <button class="aba-btn" data-aba="estoquevirtual">📦 Estoque Virtual</button>
+        <button class="aba-btn" data-aba="paletes">📋 Itens por Palete</button>
     </div>
 
-    <script>
-        // Configurações da planilha
-        const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
-        const SHEET_CODBALANCA = 'CodBalanca';
-        const SHEET_ESTOQUE = 'EstoqueVirtual';
+    <!-- Aba 1: Código x Balança -->
+    <div id="aba-codbalanca" class="conteudo-aba ativo">
+        <div class="filtros">
+            <div>
+                <label for="buscaCodBalanca">🔍 Buscar por Código ou Produto</label>
+                <input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..." autocomplete="off">
+            </div>
+            <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
+        </div>
+        <div id="statusCodBalanca">Carregando dados...</div>
+        <div id="conteudoCodBalanca"></div>
+    </div>
 
-        // URLs via opensheet
-        const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
-        const URL_ESTOQUE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ESTOQUE}`;
+    <!-- Aba 2: Estoque Virtual -->
+    <div id="aba-estoquevirtual" class="conteudo-aba">
+        <div class="filtros">
+            <div>
+                <label for="buscaEstoque">🔍 Buscar (Código, Nome, Fornecedor)</label>
+                <input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
+            </div>
+            <div class="stats" id="statsEstoque">0 itens exibidos</div>
+        </div>
+        <div id="statusEstoque">Carregando dados...</div>
+        <div id="conteudoEstoque"></div>
+    </div>
 
-        // Dados
-        let dadosCodBalanca = [];
-        let dadosEstoque = [];
+    <!-- Aba 3: Itens por Palete -->
+    <div id="aba-paletes" class="conteudo-aba">
+        <div class="filtros">
+            <div>
+                <label for="buscaPalete">🔍 Buscar (código, produto, palete)</label>
+                <input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, 00033835" autocomplete="off">
+            </div>
+            <div>
+                <label for="mesAnoValidade">📅 Mês/Ano de validade</label>
+                <select id="mesAnoValidade">
+                    <option value="todos">Todos os meses/anos</option>
+                </select>
+            </div>
+            <div class="stats" id="statsPalete">0 itens exibidos</div>
+        </div>
+        <div id="statusPalete">Carregando dados...</div>
+        <div id="conteudoPalete"></div>
+    </div>
+</div>
 
-        // Elementos DOM
-        const abaBtns = document.querySelectorAll('.aba-btn');
-        const conteudos = {
-            codbalanca: document.getElementById('aba-codbalanca'),
-            estoquevirtual: document.getElementById('aba-estoquevirtual')
-        };
-        const statusCod = document.getElementById('statusCodBalanca');
-        const conteudoCod = document.getElementById('conteudoCodBalanca');
-        const statusEst = document.getElementById('statusEstoque');
-        const conteudoEst = document.getElementById('conteudoEstoque');
-        const buscaCodInput = document.getElementById('buscaCodBalanca');
-        const buscaEstInput = document.getElementById('buscaEstoque');
-        const statsCodSpan = document.getElementById('statsCodBalanca');
-        const statsEstSpan = document.getElementById('statsEstoque');
+<script>
+    // Configuração da planilha
+    const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
+    const SHEET_CODBALANCA = 'CodBalanca';
+    const SHEET_ESTOQUE = 'EstoqueVirtual';
+    const SHEET_PALETES = 'DadosLimpos';
 
-        // Carregar dados das duas abas
-        async function carregarCodBalanca() {
-            try {
-                const response = await fetch(URL_CODBALANCA);
-                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-                dadosCodBalanca = await response.json();
-                if (dadosCodBalanca.length === 0) throw new Error('Nenhum dado encontrado na aba CodBalanca');
-                aplicarFiltroCodBalanca();
-                statusCod.style.display = 'none';
-            } catch (error) {
-                statusCod.innerHTML = `<div class="erro">❌ Erro ao carregar "CodBalanca": ${error.message}</div>`;
-                conteudoCod.innerHTML = '';
-            }
+    // URLs via opensheet
+    const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
+    const URL_ESTOQUE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ESTOQUE}`;
+    const URL_PALETES = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_PALETES}`;
+
+    // Dados
+    let dadosCodBalanca = [];
+    let dadosEstoque = [];
+    let dadosPaletes = [];
+
+    // Elementos DOM
+    const abaBtns = document.querySelectorAll('.aba-btn');
+    const conteudos = {
+        codbalanca: document.getElementById('aba-codbalanca'),
+        estoquevirtual: document.getElementById('aba-estoquevirtual'),
+        paletes: document.getElementById('aba-paletes')
+    };
+    const statusCod = document.getElementById('statusCodBalanca');
+    const conteudoCod = document.getElementById('conteudoCodBalanca');
+    const statusEst = document.getElementById('statusEstoque');
+    const conteudoEst = document.getElementById('conteudoEstoque');
+    const statusPal = document.getElementById('statusPalete');
+    const conteudoPal = document.getElementById('conteudoPalete');
+    const buscaCodInput = document.getElementById('buscaCodBalanca');
+    const buscaEstInput = document.getElementById('buscaEstoque');
+    const buscaPalInput = document.getElementById('buscaPalete');
+    const mesAnoSelect = document.getElementById('mesAnoValidade');
+    const statsCodSpan = document.getElementById('statsCodBalanca');
+    const statsEstSpan = document.getElementById('statsEstoque');
+    const statsPalSpan = document.getElementById('statsPalete');
+
+    // ==================== ABA 1: CÓDIGO X BALANÇA ====================
+    async function carregarCodBalanca() {
+        try {
+            const response = await fetch(URL_CODBALANCA);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            dadosCodBalanca = await response.json();
+            if (dadosCodBalanca.length === 0) throw new Error('Nenhum dado na aba CodBalanca');
+            aplicarFiltroCodBalanca();
+            statusCod.style.display = 'none';
+        } catch (error) {
+            statusCod.innerHTML = `<div class="erro">❌ Erro: ${error.message}</div>`;
+            conteudoCod.innerHTML = '';
         }
+    }
 
-        function aplicarFiltroCodBalanca() {
-            const termo = buscaCodInput.value.trim().toLowerCase();
-            let filtrados = dadosCodBalanca;
-            if (termo !== '') {
-                filtrados = dadosCodBalanca.filter(item => {
-                    const cod = (item['Cod'] || '').toString().toLowerCase();
-                    const produto = (item['Produto'] || '').toLowerCase();
-                    return cod.includes(termo) || produto.includes(termo);
-                });
-            }
-            statsCodSpan.textContent = `${filtrados.length} itens encontrados`;
-            renderizarCodBalanca(filtrados);
-        }
-
-        function renderizarCodBalanca(itens) {
-            if (itens.length === 0) {
-                conteudoCod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
-                return;
-            }
-
-            let html = `<div class="bloco-dados"><table><thead><tr>
-                <th>Balança</th><th>Código</th><th>Produto</th>
-            </tr></thead><tbody>`;
-            itens.forEach(item => {
-                html += `<tr>
-                    <td>${item['Balanca'] || ''}</td>
-                    <td>${item['Cod'] || ''}</td>
-                    <td>${item['Produto'] || ''}</td>
-                </tr>`;
+    function aplicarFiltroCodBalanca() {
+        const termo = buscaCodInput.value.trim().toLowerCase();
+        let filtrados = dadosCodBalanca;
+        if (termo !== '') {
+            filtrados = dadosCodBalanca.filter(item => {
+                const cod = (item['Cod'] || '').toString().toLowerCase();
+                const produto = (item['Produto'] || '').toLowerCase();
+                return cod.includes(termo) || produto.includes(termo);
             });
-            html += `</tbody></table></div>`;
-            conteudoCod.innerHTML = html;
         }
+        statsCodSpan.textContent = `${filtrados.length} itens encontrados`;
+        renderizarCodBalanca(filtrados);
+    }
 
-        async function carregarEstoque() {
-            try {
-                const response = await fetch(URL_ESTOQUE);
-                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-                dadosEstoque = await response.json();
-                if (dadosEstoque.length === 0) throw new Error('Nenhum dado encontrado na aba EstoqueVirtual');
-                aplicarFiltroEstoque();
-                statusEst.style.display = 'none';
-            } catch (error) {
-                statusEst.innerHTML = `<div class="erro">❌ Erro ao carregar "EstoqueVirtual": ${error.message}</div>`;
-                conteudoEst.innerHTML = '';
-            }
+    function renderizarCodBalanca(itens) {
+        if (itens.length === 0) {
+            conteudoCod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            return;
         }
+        let html = `<div class="bloco-dados">`;
+        html += `\n<table><thead><tr><th>Balança</th><th>Código</th><th>Produto</th></tr></thead><tbody>`;
+        itens.forEach(item => {
+            html += `<tr>
+                        <td>${item['Balanca'] || ''}</td>
+                        <td>${item['Cod'] || ''}</td>
+                        <td>${item['Produto'] || ''}</td>
+                     </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        conteudoCod.innerHTML = html;
+    }
 
-        function aplicarFiltroEstoque() {
-            const termo = buscaEstInput.value.trim().toLowerCase();
-            let filtrados = dadosEstoque;
-            if (termo !== '') {
-                filtrados = dadosEstoque.filter(item => {
-                    const codigo = (item['Codigo'] || '').toString().toLowerCase();
-                    const nome = (item['Nome'] || '').toLowerCase();
-                    const fornecedor = (item['Fornecedor'] || '').toLowerCase();
-                    return codigo.includes(termo) || nome.includes(termo) || fornecedor.includes(termo);
-                });
-            }
-            statsEstSpan.textContent = `${filtrados.length} itens exibidos`;
-            renderizarEstoque(filtrados);
+    // ==================== ABA 2: ESTOQUE VIRTUAL ====================
+    async function carregarEstoque() {
+        try {
+            const response = await fetch(URL_ESTOQUE);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            dadosEstoque = await response.json();
+            if (dadosEstoque.length === 0) throw new Error('Nenhum dado na aba EstoqueVirtual');
+            aplicarFiltroEstoque();
+            statusEst.style.display = 'none';
+        } catch (error) {
+            statusEst.innerHTML = `<div class="erro">❌ Erro: ${error.message}</div>`;
+            conteudoEst.innerHTML = '';
         }
+    }
 
-        function renderizarEstoque(itens) {
-            if (itens.length === 0) {
-                conteudoEst.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
-                return;
-            }
-
-            let html = `<div class="bloco-dados"><table><thead><tr>
-                <th>Código</th><th>Nome</th><th>Estoque</th>
-                <th>Dias sem venda</th><th>Última venda</th>
-                <th>Última Compra</th><th>Classe de Produto</th><th>Fornecedor</th>
-            </tr></thead><tbody>`;
-            itens.forEach(item => {
-                html += `<tr>
-                    <td>${item['Codigo'] || ''}</td>
-                    <td>${item['Nome'] || ''}</td>
-                    <td class="qtde">${item['Estoque'] || '0'}</td>
-                    <td>${item['Dias sem venda'] || ''}</td>
-                    <td>${item['Última venda'] || ''}</td>
-                    <td>${item['Ítima Compra'] || item['Última Compra'] || ''}</td>
-                    <td>${item['Classe de Produto'] || ''}</td>
-                    <td>${item['Fornecedor'] || ''}</td>
-                </tr>`;
+    function aplicarFiltroEstoque() {
+        const termo = buscaEstInput.value.trim().toLowerCase();
+        let filtrados = dadosEstoque;
+        if (termo !== '') {
+            filtrados = dadosEstoque.filter(item => {
+                const codigo = (item['Codigo'] || '').toString().toLowerCase();
+                const nome = (item['Nome'] || '').toLowerCase();
+                const fornecedor = (item['Fornecedor'] || '').toLowerCase();
+                return codigo.includes(termo) || nome.includes(termo) || fornecedor.includes(termo);
             });
-            html += `</tbody></table></div>`;
-            conteudoEst.innerHTML = html;
         }
+        statsEstSpan.textContent = `${filtrados.length} itens exibidos`;
+        renderizarEstoque(filtrados);
+    }
 
-        // Eventos de troca de aba
-        function trocarAba(abaId) {
-            for (const [id, elemento] of Object.entries(conteudos)) {
-                if (id === abaId) {
-                    elemento.classList.add('ativo');
+    function renderizarEstoque(itens) {
+        if (itens.length === 0) {
+            conteudoEst.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            return;
+        }
+        let html = `<div class="bloco-dados">`;
+        html += `\n<table><thead><tr>
+                    <th>Código</th><th>Nome</th><th>Estoque</th>
+                    <th>Dias sem venda</th><th>Última venda</th>
+                    <th>Última Compra</th><th>Classe de Produto</th><th>Fornecedor</th>
+                  </tr></thead><tbody>`;
+        itens.forEach(item => {
+            html += `<tr>
+                        <td>${item['Codigo'] || ''}</td>
+                        <td>${item['Nome'] || ''}</td>
+                        <td class="qtde">${item['Estoque'] || '0'}</td>
+                        <td>${item['Dias sem venda'] || ''}</td>
+                        <td>${item['Última venda'] || ''}</td>
+                        <td>${item['Última Compra'] || ''}</td>
+                        <td>${item['Classe de Produto'] || ''}</td>
+                        <td>${item['Fornecedor'] || ''}</td>
+                     </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        conteudoEst.innerHTML = html;
+    }
+
+    // ==================== ABA 3: ITENS POR PALETE ====================
+    async function carregarPaletes() {
+        try {
+            const response = await fetch(URL_PALETES);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            dadosPaletes = await response.json();
+            if (dadosPaletes.length === 0) throw new Error('Nenhum dado na aba DadosLimpos');
+
+            // Popular filtro de mês/ano
+            const mesesAnos = new Set();
+            dadosPaletes.forEach(item => {
+                const validade = item['Validade'];
+                if (validade) {
+                    const partes = validade.split('/');
+                    if (partes.length === 3) {
+                        mesesAnos.add(`${partes[1]}/${partes[2]}`);
+                    }
+                }
+            });
+            const mesesAnosArray = Array.from(mesesAnos).sort((a, b) => {
+                const [mA, aA] = a.split('/');
+                const [mB, aB] = b.split('/');
+                if (aA !== aB) return aA - aB;
+                return mA - mB;
+            });
+            mesesAnosArray.forEach(mesAno => {
+                const opt = document.createElement('option');
+                opt.value = mesAno;
+                opt.textContent = mesAno;
+                mesAnoSelect.appendChild(opt);
+            });
+
+            aplicarFiltroPaletes();
+            statusPal.style.display = 'none';
+        } catch (error) {
+            statusPal.innerHTML = `<div class="erro">❌ Erro: ${error.message}</div>`;
+            conteudoPal.innerHTML = '';
+        }
+    }
+
+    function aplicarFiltroPaletes() {
+        const termo = buscaPalInput.value.trim().toLowerCase();
+        const mesAno = mesAnoSelect.value;
+
+        let filtrados = dadosPaletes.filter(item => {
+            if (mesAno !== 'todos') {
+                const validade = item['Validade'] || '';
+                const partes = validade.split('/');
+                if (partes.length === 3) {
+                    const ma = `${partes[1]}/${partes[2]}`;
+                    if (ma !== mesAno) return false;
                 } else {
-                    elemento.classList.remove('ativo');
+                    return false;
                 }
             }
-            abaBtns.forEach(btn => {
-                if (btn.dataset.aba === abaId) {
-                    btn.classList.add('ativo');
-                } else {
-                    btn.classList.remove('ativo');
-                }
-            });
-        }
-
-        abaBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                trocarAba(btn.dataset.aba);
-            });
+            if (termo !== '') {
+                const codigo = (item['Codigo'] || '').toString().toLowerCase();
+                const produto = (item['Produto'] || '').toLowerCase();
+                const palete = (item['Palete'] || '').toString().toLowerCase();
+                return codigo.includes(termo) || produto.includes(termo) || palete.includes(termo);
+            }
+            return true;
         });
 
-        // Eventos de busca
-        buscaCodInput.addEventListener('input', aplicarFiltroCodBalanca);
-        buscaEstInput.addEventListener('input', aplicarFiltroEstoque);
+        statsPalSpan.textContent = `${filtrados.length} itens exibidos`;
+        renderizarPaletes(filtrados);
+    }
 
-        // Inicialização
-        carregarCodBalanca();
-        carregarEstoque();
-    </script>
+    function renderizarPaletes(itens) {
+        if (itens.length === 0) {
+            conteudoPal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
+            return;
+        }
+        const paletes = {};
+        itens.forEach(item => {
+            const num = item['Palete'] || 'SEM PALETE';
+            if (!paletes[num]) paletes[num] = [];
+            paletes[num].push(item);
+        });
+        const ordenados = Object.keys(paletes).sort((a,b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        let html = '';
+        ordenados.forEach(num => {
+            const grupo = paletes[num];
+            html += `<div class="bloco-palete">`;
+            html += `<div class="titulo-palete">Palete: ${num}</div>`;
+            html += `<table><thead><tr>
+                        <th>Código</th><th>Produto</th><th>Qtde</th><th>Validade</th><th>Data Entrada</th>
+                     </tr></thead><tbody>`;
+            grupo.forEach(item => {
+                html += `<tr>
+                            <td class="codigo">${item['Codigo'] || ''}</td>
+                            <td>${item['Produto'] || ''}</td>
+                            <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
+                            <td class="validade">${item['Validade'] || ''}</td>
+                            <td>${item['Data Entrada'] || ''}</td>
+                         </tr>`;
+            });
+            html += `</tbody></table></div>`;
+        });
+        conteudoPal.innerHTML = html;
+    }
+
+    // ==================== EVENTOS DE ABA ====================
+    function trocarAba(abaId) {
+        for (const [id, el] of Object.entries(conteudos)) {
+            if (id === abaId) el.classList.add('ativo');
+            else el.classList.remove('ativo');
+        }
+        abaBtns.forEach(btn => {
+            if (btn.dataset.aba === abaId) btn.classList.add('ativo');
+            else btn.classList.remove('ativo');
+        });
+    }
+
+    abaBtns.forEach(btn => {
+        btn.addEventListener('click', () => trocarAba(btn.dataset.aba));
+    });
+
+    // Eventos de filtro
+    buscaCodInput.addEventListener('input', aplicarFiltroCodBalanca);
+    buscaEstInput.addEventListener('input', aplicarFiltroEstoque);
+    buscaPalInput.addEventListener('input', aplicarFiltroPaletes);
+    mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
+
+    // Inicializar
+    carregarCodBalanca();
+    carregarEstoque();
+    carregarPaletes();
+</script>
 </body>
 </html>
