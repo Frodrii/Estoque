@@ -112,11 +112,15 @@
             margin-top: 4px;
         }
 
-        /* Tabela com cabeçalho fixo */
+        /* Tabelas com cabeçalho fixo */
         .tabela-wrapper {
             overflow-x: auto;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
+            background: white;
+            max-height: 70vh;
+            overflow-y: auto;
+            position: relative;
         }
         table {
             width: 100%;
@@ -134,6 +138,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            box-shadow: 0 1px 0 0 rgba(255,255,255,0.2);
         }
         .ordenar-btn {
             margin-left: 8px;
@@ -163,7 +168,7 @@
         .erro { color: #b91c1c; background: #fee2e2; }
         .vazio { color: #475569; background: #f1f5f9; font-style: italic; }
 
-        /* Blocos para agrupamentos (usados apenas quando agrupado) */
+        /* Blocos para agrupamentos */
         .bloco-palete {
             background: white;
             border-radius: 16px;
@@ -187,6 +192,35 @@
             margin: 12px 0 8px;
             padding-left: 8px;
             border-left: 3px solid #2563eb;
+        }
+
+        /* Botão voltar ao topo */
+        .btn-topo {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-topo:hover {
+            background: #1e40af;
+            transform: scale(1.05);
+        }
+        .btn-topo.hidden {
+            opacity: 0;
+            visibility: hidden;
         }
 
         @media (min-width: 768px) {
@@ -234,7 +268,7 @@
         <div id="conteudoEstoque"></div>
     </div>
 
-    <!-- ABA 3: Itens por Palete (com agrupamento ou sem) -->
+    <!-- ABA 3: Itens por Palete -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
             <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
@@ -265,6 +299,8 @@
     </div>
 </div>
 
+<button class="btn-topo hidden" id="btnTopo" title="Voltar ao topo">↑</button>
+
 <script>
     // Configurações
     const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
@@ -290,7 +326,7 @@
     let mapas = { fornecedor: {}, estoque: {}, diasSemVenda: {} };
     let ultimaAtualizacao = new Date();
 
-    // Estados de ordenação (cada aba com seu próprio)
+    // Estados de ordenação
     let ord = {
         codbalanca: { coluna: 'Balanca', direcao: 'asc' },
         estoque: { coluna: null, direcao: 'asc' },
@@ -308,7 +344,6 @@
         analise: document.getElementById('aba-analise')
     };
 
-    // Campos de busca e stats
     const busca = {
         codbalanca: document.getElementById('buscaCodBalanca'),
         estoque: document.getElementById('buscaEstoque'),
@@ -336,6 +371,16 @@
 
     const mesAnoSelect = document.getElementById('mesAnoValidade');
     const agruparPorSelect = document.getElementById('agruparPor');
+
+    // Botão voltar ao topo
+    const btnTopo = document.getElementById('btnTopo');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 200) btnTopo.classList.remove('hidden');
+        else btnTopo.classList.add('hidden');
+    });
+    btnTopo.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     // Funções auxiliares
     function formatarDataBrasil(data) {
@@ -396,7 +441,7 @@
         } catch (e) { console.warn('Aba Atualizada não encontrada'); }
     }
 
-    // Carregar dados de estoque e popular mapas
+    // Carregar estoque e popular mapas
     async function carregarEstoque() {
         try {
             const resp = await fetch(URLS.estoque);
@@ -456,17 +501,15 @@
         const html = `
             <div class="tabela-wrapper">
                 <table id="tabela-codbalanca">
-                    <thead><tr>
-                        <th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>
-                        <th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>
-                        <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                    </tr></thead>
+                    <thead>${gerarCabecalhoCodBalanca()}</thead>
                     <tbody>
-                        ${ordenados.map(i => `<tr>
-                            <td>${i['Balanca'] || ''}</td>
-                            <td>${i['Cod'] || ''}</td>
-                            <td>${i['Produto'] || ''}</td>
-                        </tr>`).join('')}
+                        ${ordenados.map(i => ` 
+                            <tr>
+                                <td>${i['Balanca'] || ''}</td>
+                                <td>${i['Cod'] || ''}</td>
+                                <td>${i['Produto'] || ''}</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
             </div>`;
@@ -474,7 +517,15 @@
         attachOrdenacao('tabela-codbalanca', 'codbalanca');
     }
 
-    // ==================== ABA 2: Estoque Virtual ====================
+    function gerarCabecalhoCodBalanca() {
+        return `<tr>
+            <th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>
+            <th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>
+            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+        </tr>`;
+    }
+
+    // ==================== ABA 2: Estoque Virtual (com tolerância à coluna Classe de Produto) ====================
     function aplicarFiltroEstoque() {
         const termo = busca.estoque.value.trim().toLowerCase();
         let filtrados = dados.estoque.filter(i => {
@@ -494,29 +545,39 @@
             return;
         }
         const ordenados = ordenarDados(itens, ord.estoque.coluna, ord.estoque.direcao);
-        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Classe de Produto', 'Fornecedor'];
         const html = `
             <div class="tabela-wrapper">
                 <table id="tabela-estoque">
-                    <thead><tr>
-                        ${colunas.map(col => `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`).join('')}
-                    </tr></thead>
+                    <thead>${gerarCabecalhoEstoque()}</thead>
                     <tbody>
-                        ${ordenados.map(i => `<tr>
-                            <td>${i['Codigo'] || ''}</td>
-                            <td>${i['Nome'] || ''}</td>
-                            <td class="qtde">${i['Estoque'] || '0'}</td>
-                            <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                            <td>${i['Última venda'] || ''}</td>
-                            <td>${i['Última Compra'] || ''}</td>
-                            <td>${i['Classe de Produto'] || ''}</td>
-                            <td>${i['Fornecedor'] || ''}</td>
-                        </tr>`).join('')}
+                        ${ordenados.map(i => ` 
+                            <tr>
+                                <td>${i['Codigo'] || ''}</td>
+                                <td>${i['Nome'] || ''}</td>
+                                <td class="qtde">${i['Estoque'] || '0'}</td>
+                                <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                                <td>${i['Última venda'] || ''}</td>
+                                <td>${i['Última Compra'] || ''}</td>
+                                ${i['Classe de Produto'] !== undefined ? `<td>${i['Classe de Produto'] || ''}</td>` : ''}
+                                <td>${i['Fornecedor'] || ''}</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
             </div>`;
         conteudoDivs.estoque.innerHTML = html;
         attachOrdenacao('tabela-estoque', 'estoque');
+    }
+
+    function gerarCabecalhoEstoque() {
+        let colunas = [
+            'Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra'
+        ];
+        // Só adiciona a coluna "Classe de Produto" se existir em pelo menos um item
+        const temClasse = dados.estoque.some(item => item['Classe de Produto'] !== undefined);
+        if (temClasse) colunas.push('Classe de Produto');
+        colunas.push('Fornecedor');
+        return `<tr>${colunas.map(col => `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`).join('')}</tr>`;
     }
 
     // ==================== ABA 3: Itens por Palete ====================
@@ -527,7 +588,6 @@
             dados.paletes = await resp.json();
             if (!dados.paletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
 
-            // Garantir que os mapas estejam preenchidos
             if (!dados.estoque.length) await carregarEstoque();
 
             // Preencher meses/ano
@@ -593,19 +653,10 @@
         }
 
         if (agrupar === 'nenhum') {
-            // Tabela única sem agrupamento
             const html = `
                 <div class="tabela-wrapper">
                     <table id="tabela-paletes-single">
-                        <thead><tr>
-                            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                            <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                            <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                            <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                            <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
-                            <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                        </tr></thead>
+                        <thead>${gerarCabecalhoPaletes()}</thead>
                         <tbody>
                             ${itens.map(item => renderLinhaPalete(item)).join('')}
                         </tbody>
@@ -616,7 +667,6 @@
             return;
         }
 
-        // Agrupamento
         if (agrupar === 'data_fornecedor') {
             const gruposData = {};
             for (const item of itens) {
@@ -645,15 +695,7 @@
                 for (const forn of fornsOrdenadas) {
                     const itensForn = gruposForn[forn];
                     html += `<div class="subtitulo">Fornecedor: ${forn}</div>`;
-                    html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead><tr>
-                                <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                                <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                                <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                                <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                                <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                                <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
-                                <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                            </tr></thead><tbody>`;
+                    html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead>${gerarCabecalhoPaletes()}</thead><tbody>`;
                     for (const item of itensForn) html += renderLinhaPalete(item);
                     html += `</tbody></table></div>`;
                 }
@@ -695,20 +737,24 @@
             const itensGrupo = grupos[chave];
             html += `<div class="bloco-palete">`;
             html += `<div class="titulo-palete">${agrupar === 'palete' ? 'Palete' : agrupar === 'data' ? 'Data Entrada' : 'Fornecedor'}: ${chave}</div>`;
-            html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead><tr>
-                        <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                        <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                        <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                        <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                        <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                        <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
-                        <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                    </tr></thead><tbody>`;
+            html += `<div class="tabela-wrapper"><table class="tabela-palete-grupo"><thead>${gerarCabecalhoPaletes()}</thead><tbody>`;
             for (const item of itensGrupo) html += renderLinhaPalete(item);
             html += `</tbody></table></div></div>`;
         }
         conteudoDivs.paletes.innerHTML = html;
         attachOrdenacao('.tabela-palete-grupo', 'paletes');
+    }
+
+    function gerarCabecalhoPaletes() {
+        return `<tr>
+            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+            <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
+            <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
+            <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
+            <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
+            <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+        </tr>`;
     }
 
     function renderLinhaPalete(item) {
@@ -806,21 +852,20 @@
         const html = `
             <div class="tabela-wrapper">
                 <table id="tabela-analise">
-                    <thead><tr>
-                        <th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th>
-                        <th>Produto <span class="ordenar-btn" data-coluna="nome">⇅</span></th>
-                        <th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th>
-                        <th>Estoque <span class="ordenar-btn" data-coluna="estoque">⇅</span></th>
-                        <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
-                        <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
-                        <th>Sugestão</th><th>Detalhe</th>
-                    </tr></thead>
+                    <thead>${gerarCabecalhoAnalise()}</thead>
                     <tbody>
-                        ${filtrados.map(a => `<tr class="${a.sugestao !== 'OK' ? 'negativo' : ''}">
-                            <td>${a.codigo}</td><td>${a.nome}</td><td>${a.fornecedor}</td>
-                            <td class="qtde">${a.estoque}</td><td class="qtde">${a.diasSemVenda}</td>
-                            <td>${a.ultimaCompra}</td><td>${a.sugestao}</td><td>${a.motivo}</td>
-                        </tr>`).join('')}
+                        ${filtrados.map(a => `
+                            <tr class="${a.sugestao !== 'OK' ? 'negativo' : ''}">
+                                <td>${a.codigo}</td>
+                                <td>${a.nome}</td>
+                                <td>${a.fornecedor}</td>
+                                <td class="qtde">${a.estoque}</td>
+                                <td class="qtde">${a.diasSemVenda}</td>
+                                <td>${a.ultimaCompra}</td>
+                                <td>${a.sugestao}</td>
+                                <td>${a.motivo}</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
             </div>`;
@@ -828,11 +873,24 @@
         attachOrdenacao('tabela-analise', 'analise');
     }
 
+    function gerarCabecalhoAnalise() {
+        return `<tr>
+            <th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th>
+            <th>Produto <span class="ordenar-btn" data-coluna="nome">⇅</span></th>
+            <th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th>
+            <th>Estoque <span class="ordenar-btn" data-coluna="estoque">⇅</span></th>
+            <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
+            <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
+            <th>Sugestão</th><th>Detalhe</th>
+        </tr>`;
+    }
+
     // Função genérica para anexar eventos de ordenação
     function attachOrdenacao(tabelaSelector, abaKey) {
         const tabelas = document.querySelectorAll(tabelaSelector);
         tabelas.forEach(tabela => {
-            tabela.querySelectorAll('th .ordenar-btn').forEach(btn => {
+            const botoes = tabela.querySelectorAll('th .ordenar-btn');
+            botoes.forEach(btn => {
                 btn.removeEventListener('click', ordenacaoHandler);
                 btn.addEventListener('click', ordenacaoHandler);
                 function ordenacaoHandler(e) {
