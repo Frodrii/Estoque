@@ -426,6 +426,7 @@
                 mapasGlobal.diasSemVenda.set(cod, parseInt(item['Dias sem venda']) || 0);
             }
         });
+        console.log('Mapas atualizados. Fornecedores:', mapasGlobal.fornecedor.size);
     }
 
     // ==================== CARREGAMENTO DOS DADOS ====================
@@ -469,6 +470,7 @@
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             dadosEstoque = await resp.json();
             if (!dadosEstoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
+            console.log('Estoque carregado, total:', dadosEstoque.length);
             atualizarMapasEstoque();
             statusDivs.est.style.display = 'none';
             aplicarFiltroEstoque();
@@ -525,6 +527,7 @@
 
     async function carregarAnalise() {
         if (dadosEstoque.length === 0) {
+            console.log('Carregando estoque para análise...');
             await carregarEstoque();
         }
         statusDivs.analise.style.display = 'none';
@@ -562,11 +565,11 @@
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead><tr>
-            <th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>
-            <th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>
-            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-        </tr></thead><tbody>`;
+        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead>`
+            + `<th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>`
+            + `<th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>`
+            + `<th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>`
+            + `</thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
                         <td>${i['Balanca'] || ''}</td>
@@ -630,12 +633,16 @@
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>`;
-        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Classe de Produto', 'Fornecedor'];
-        colunas.forEach(col => {
-            html += `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`;
-        });
-        html += `</tr></thead><tbody>`;
+        // Removida a coluna "Classe de Produto"
+        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>
+            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+            <th>Nome <span class="ordenar-btn" data-coluna="Nome">⇅</span></th>
+            <th>Estoque <span class="ordenar-btn" data-coluna="Estoque">⇅</span></th>
+            <th>Dias sem venda <span class="ordenar-btn" data-coluna="Dias sem venda">⇅</span></th>
+            <th>Última venda <span class="ordenar-btn" data-coluna="Última venda">⇅</span></th>
+            <th>Última Compra <span class="ordenar-btn" data-coluna="Última Compra">⇅</span></th>
+            <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
+        </tr></thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
                         <td>${i['Codigo'] || ''}</td>
@@ -644,7 +651,6 @@
                         <td class="qtde">${i['Dias sem venda'] || ''}</td>
                         <td>${i['Última venda'] || ''}</td>
                         <td>${i['Última Compra'] || ''}</td>
-                        <td>${i['Classe de Produto'] || ''}</td>
                         <td>${i['Fornecedor'] || ''}</td>
                      </tr>`;
         });
@@ -772,7 +778,7 @@
                                     <td class="qtde">${estoqueAtual}</td>
                                     <td class="qtde">${diasSemVenda}</td>
                                     <td>${sugestao}</td>
-                                 </tr>`;
+                                  </tr>`;
                     }
                     html += `</tbody></table></div>`;
                 }
@@ -851,7 +857,7 @@
                             <td class="qtde">${estoqueAtual}</td>
                             <td class="qtde">${diasSemVenda}</td>
                             <td>${sugestao}</td>
-                         </tr>`;
+                          </tr>`;
             }
             html += `</tbody></table></div></div>`;
         }
@@ -878,6 +884,14 @@
     function aplicarFiltroAnalise() {
         const termo = buscaAnalise.value.trim().toLowerCase();
         const hoje = new Date();
+
+        if (!dadosEstoque || dadosEstoque.length === 0) {
+            console.warn('dadosEstoque vazio, não é possível analisar');
+            stats.analise.textContent = '0 itens analisados';
+            conteudoDivs.analise.innerHTML = '<div class="vazio">Nenhum dado de estoque carregado.</div>';
+            paginacaoDivs.analise.style.display = 'none';
+            return;
+        }
 
         const analise = [];
         for (const est of dadosEstoque) {
@@ -1026,7 +1040,9 @@
         abaBtns.forEach(btn => {
             btn.classList.toggle('ativo', btn.dataset.aba === abaId);
         });
-        if (abaId === 'analise' && dadosEstoque.length === 0) carregarAnalise();
+        if (abaId === 'analise') {
+            carregarAnalise();
+        }
     }
 
     abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
@@ -1052,7 +1068,6 @@
         carregarEstoque(),
         carregarPaletes()
     ]).then(() => {
-        // Se alguma falhou, mas as outras carregaram, tudo bem
         console.log('Carregamento concluído');
     });
 </script>
