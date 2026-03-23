@@ -414,6 +414,23 @@
         });
     }
 
+    // Mapeia quais colunas são numéricas em cada aba
+    function getTipoColuna(aba, coluna) {
+        if (aba === 'estoque') {
+            const numericas = ['Estoque', 'Dias sem venda'];
+            if (numericas.includes(coluna)) return 'numero';
+        } else if (aba === 'paletes') {
+            const numericas = ['Qtde Esperada', 'Estoque Atual', 'Dias s/ Venda', 'Código'];
+            // Código pode ser tratado como string, mas se quiser ordenação numérica, descomente a linha abaixo
+            // if (coluna === 'Código') return 'numero';
+            if (numericas.includes(coluna)) return 'numero';
+        } else if (aba === 'analise') {
+            const numericas = ['estoque', 'diasSemVenda'];
+            if (numericas.includes(coluna)) return 'numero';
+        }
+        return 'auto';
+    }
+
     function atualizarMapasEstoque() {
         mapasGlobal.fornecedor.clear();
         mapasGlobal.estoque.clear();
@@ -572,10 +589,10 @@
             + `</thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
-                        <td>${i['Balanca'] || ''}</td>
-                        <td>${i['Cod'] || ''}</td>
-                        <td>${i['Produto'] || ''}</td>
-                     </tr>`;
+                         <td>${i['Balanca'] || ''}</td>
+                         <td>${i['Cod'] || ''}</td>
+                         <td>${i['Produto'] || ''}</td>
+                      </tr>`;
         });
         html += `</tbody></table></div>`;
         conteudoDivs.cod.innerHTML = html;
@@ -633,7 +650,6 @@
             return;
         }
 
-        // Removida a coluna "Classe de Produto"
         let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>
             <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
             <th>Nome <span class="ordenar-btn" data-coluna="Nome">⇅</span></th>
@@ -667,12 +683,17 @@
         document.querySelectorAll('#tabela-estoque th .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const col = btn.dataset.coluna;
+                const tipo = getTipoColuna('estoque', col);
                 if (ordenacao.estoque.coluna === col) {
                     ordenacao.estoque.direcao = ordenacao.estoque.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
                     ordenacao.estoque.coluna = col;
                     ordenacao.estoque.direcao = 'asc';
                 }
+                // Reordenar os dados já filtrados, mas com o tipo correto
+                const novosOrdenados = ordenarDados(paginacao.estoque.dadosFiltrados, ordenacao.estoque.coluna, ordenacao.estoque.direcao, tipo);
+                paginacao.estoque.dadosFiltrados = novosOrdenados;
+                paginacao.estoque.paginaAtual = 1;
                 renderizarEstoque();
             });
         });
@@ -702,7 +723,10 @@
         });
 
         stats.pal.textContent = `${filtrados.length} itens exibidos`;
-        renderizarPaletes(ordenarDados(filtrados, ordenacao.paletes.coluna, ordenacao.paletes.direcao));
+        // Ordenar usando tipo adequado para cada coluna
+        const tipo = getTipoColuna('paletes', ordenacao.paletes.coluna);
+        const ordenados = ordenarDados(filtrados, ordenacao.paletes.coluna, ordenacao.paletes.direcao, tipo);
+        renderizarPaletes(ordenados);
     }
 
     function renderizarPaletes(itens) {
@@ -828,7 +852,7 @@
                         <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                         <th>Fornecedor</th>
                         <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                    </tr></thead><tbody>`;
+                     </tr></thead><tbody>`;
             for (const item of itensGrupo) {
                 const cod = item['Codigo']?.toString();
                 const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
@@ -869,6 +893,7 @@
         document.querySelectorAll('#conteudoPalete .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const coluna = btn.dataset.coluna;
+                const tipo = getTipoColuna('paletes', coluna);
                 if (ordenacao.paletes.coluna === coluna) {
                     ordenacao.paletes.direcao = ordenacao.paletes.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
@@ -943,7 +968,8 @@
                 return b.diasSemVenda - a.diasSemVenda;
             });
         } else {
-            filtrados = ordenarDados(filtrados, ordenacao.analise.coluna, ordenacao.analise.direcao);
+            const tipo = getTipoColuna('analise', ordenacao.analise.coluna);
+            filtrados = ordenarDados(filtrados, ordenacao.analise.coluna, ordenacao.analise.direcao, tipo);
         }
 
         stats.analise.textContent = `${filtrados.length} itens analisados`;
@@ -1000,13 +1026,18 @@
         document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const col = btn.dataset.coluna;
+                const tipo = getTipoColuna('analise', col);
                 if (ordenacao.analise.coluna === col) {
                     ordenacao.analise.direcao = ordenacao.analise.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
                     ordenacao.analise.coluna = col;
                     ordenacao.analise.direcao = 'asc';
                 }
-                aplicarFiltroAnalise();
+                // Reordenar os dados já filtrados, mas com o tipo correto
+                const novosOrdenados = ordenarDados(paginacao.analise.dadosFiltrados, ordenacao.analise.coluna, ordenacao.analise.direcao, tipo);
+                paginacao.analise.dadosFiltrados = novosOrdenados;
+                paginacao.analise.paginaAtual = 1;
+                renderizarAnalise();
             });
         });
     }
