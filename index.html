@@ -130,6 +130,17 @@
         .btn-acao:hover {
             background: #e2e8f0;
         }
+        .btn-buscar {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .btn-buscar:hover {
+            background: #1d4ed8;
+        }
         .stats {
             background: #eef2f6;
             padding: 8px 16px;
@@ -364,7 +375,7 @@
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
     </div>
 
-    <!-- ABA 1: Código x Balança -->
+    <!-- ABA 1: Código x Balança (sem fornecedor) -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
             <div class="filtros-top">
@@ -380,11 +391,12 @@
         <div id="paginacaoCodBalanca" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 2: Estoque Virtual -->
+    <!-- ABA 2: Estoque Virtual (com fornecedor) -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
-                <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
+                <div><label>🔍 Buscar por Código ou Nome</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO"></div>
+                <div><label>🏢 Fornecedor</label><input type="text" id="buscaEstoqueFornecedor" placeholder="Ex: AURORA, SADIA"></div>
                 <div class="stats" id="statsEstoque">0 itens exibidos</div>
             </div>
             <div class="filtros-botoes">
@@ -396,11 +408,12 @@
         <div id="paginacaoEstoque" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 3: Itens por Palete (com checkboxes para agrupamento múltiplo) -->
+    <!-- ABA 3: Itens por Palete (com fornecedor e botão Buscar) -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
-                <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
+                <div><label>🔍 Código ou Produto</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA"></div>
+                <div><label>🏢 Fornecedor</label><input type="text" id="buscaPaleteFornecedor" placeholder="Ex: AURORA, SADIA"></div>
                 <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
                 <div class="stats" id="statsPalete">0 itens exibidos</div>
             </div>
@@ -410,17 +423,19 @@
                 <label><input type="checkbox" id="agruparData" value="data"> Data Entrada</label>
                 <label><input type="checkbox" id="agruparFornecedor" value="fornecedor"> Fornecedor</label>
                 <label><input type="checkbox" id="agruparPalete" value="palete"> Palete</label>
+                <button id="btnBuscarPaletes" class="btn-acao btn-buscar">🔍 Buscar</button>
             </div>
         </div>
         <div id="statusPalete" class="carregando">Carregando dados...</div>
         <div id="conteudoPalete"></div>
     </div>
 
-    <!-- ABA 4: Análise de Estoque -->
+    <!-- ABA 4: Análise de Estoque (com fornecedor) -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
-                <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
+                <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO"></div>
+                <div><label>🏢 Fornecedor</label><input type="text" id="buscaAnaliseFornecedor" placeholder="Ex: AURORA, SADIA"></div>
                 <div class="stats" id="statsAnalise">0 itens analisados</div>
             </div>
             <div class="filtros-botoes">
@@ -470,7 +485,7 @@
         diasSemVenda: new Map()
     };
 
-    let ultimaEntradaMap = new Map(); // código -> última data de entrada
+    let ultimaEntradaMap = new Map();
 
     let ultimaAtualizacao = new Date();
 
@@ -519,8 +534,11 @@
     };
     const buscaCod = document.getElementById('buscaCodBalanca');
     const buscaEst = document.getElementById('buscaEstoque');
+    const buscaEstFornecedor = document.getElementById('buscaEstoqueFornecedor');
     const buscaPal = document.getElementById('buscaPalete');
+    const buscaPalFornecedor = document.getElementById('buscaPaleteFornecedor');
     const buscaAnalise = document.getElementById('buscaAnalise');
+    const buscaAnaliseFornecedor = document.getElementById('buscaAnaliseFornecedor');
     const mesAnoSelect = document.getElementById('mesAnoValidade');
     const stats = {
         cod: document.getElementById('statsCodBalanca'),
@@ -549,6 +567,7 @@
     const btnVisaoEstoque = document.getElementById('btnVisaoEstoque');
     const btnVisaoPaletes = document.getElementById('btnVisaoPaletes');
     const btnVisaoAnalise = document.getElementById('btnVisaoAnalise');
+    const btnBuscarPaletes = document.getElementById('btnBuscarPaletes');
     const btnConfigColunas = document.getElementById('btnConfigColunas');
     const modalColunas = document.getElementById('modalColunas');
     const checklistDiv = document.getElementById('checklistColunas');
@@ -725,7 +744,7 @@
             });
 
             statusDivs.pal.style.display = 'none';
-            aplicarFiltroPaletes();
+            // Não aplica filtro automaticamente, aguarda o botão Buscar
         } catch (err) {
             statusDivs.pal.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
             conteudoDivs.pal.innerHTML = '';
@@ -770,6 +789,7 @@
         } else if (aba === 'paletes') {
             visao.paletes = visao.paletes === 'tabela' ? 'cards' : 'tabela';
             localStorage.setItem('visao_paletes', visao.paletes);
+            // reaplica o filtro atual (com os parâmetros já definidos)
             aplicarFiltroPaletes();
         } else if (aba === 'analise') {
             visao.analise = visao.analise === 'tabela' ? 'cards' : 'tabela';
@@ -818,10 +838,10 @@
                 + `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                              <td>${i['Balanca'] || ''}</td>
-                              <td>${i['Cod'] || ''}</td>
-                              <td>${i['Produto'] || ''}</td>
-                            </tr>`;
+                               <td>${i['Balanca'] || ''}</td>
+                               <td>${i['Cod'] || ''}</td>
+                               <td>${i['Produto'] || ''}</td>
+                             </tr>`;
             });
             html += `</tbody></table></div>`;
             conteudoDivs.cod.innerHTML = html;
@@ -839,7 +859,6 @@
                 });
             });
         } else {
-            // Cards
             let html = `<div class="cards-view">`;
             for (const item of ordenados) {
                 html += `<div class="card-item">
@@ -863,13 +882,17 @@
     // ==================== ABA ESTOQUE VIRTUAL ====================
     function aplicarFiltroEstoque() {
         const termo = buscaEst.value.trim().toLowerCase();
+        const termoForn = buscaEstFornecedor.value.trim().toLowerCase();
         let filtrados = dadosEstoque;
-        if (termo) {
+        if (termo || termoForn) {
             filtrados = dadosEstoque.filter(i => {
                 const cod = (i['Codigo'] || '').toString().toLowerCase();
                 const nome = (i['Nome'] || '').toLowerCase();
                 const forn = (i['Fornecedor'] || '').toLowerCase();
-                return cod.includes(termo) || nome.includes(termo) || forn.includes(termo);
+                let match = true;
+                if (termo) match = match && (cod.includes(termo) || nome.includes(termo));
+                if (termoForn) match = match && forn.includes(termoForn);
+                return match;
             });
         }
         stats.est.textContent = `${filtrados.length} itens exibidos`;
@@ -901,14 +924,14 @@
             html += `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                              <td>${i['Codigo'] || ''}</td>
-                              <td>${i['Nome'] || ''}</td>
-                              <td class="qtde">${i['Estoque'] || '0'}</td>
-                              <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                              <td>${i['Última venda'] || ''}</td>
-                              <td>${i['Última Compra'] || ''}</td>
-                              <td>${i['Fornecedor'] || ''}</td>
-                            </tr>`;
+                               <td>${i['Codigo'] || ''}</td>
+                               <td>${i['Nome'] || ''}</td>
+                               <td class="qtde">${i['Estoque'] || '0'}</td>
+                               <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                               <td>${i['Última venda'] || ''}</td>
+                               <td>${i['Última Compra'] || ''}</td>
+                               <td>${i['Fornecedor'] || ''}</td>
+                             </tr>`;
             });
             html += `</tbody></table></div>`;
             conteudoDivs.est.innerHTML = html;
@@ -930,7 +953,6 @@
                 });
             });
         } else {
-            // Cards
             let html = `<div class="cards-view">`;
             for (const item of ordenados) {
                 html += `<div class="card-item">
@@ -955,9 +977,10 @@
         }
     }
 
-    // ==================== ABA ITENS POR PALETE (MÚLTIPLOS AGRUPAMENTOS) ====================
+    // ==================== ABA ITENS POR PALETE ====================
     function aplicarFiltroPaletes() {
         const termo = buscaPal.value.trim().toLowerCase();
+        const termoForn = buscaPalFornecedor.value.trim().toLowerCase();
         const mesAno = mesAnoSelect.value;
 
         let filtrados = dadosPaletes.filter(i => {
@@ -969,11 +992,14 @@
                     if (ma !== mesAno) return false;
                 } else return false;
             }
-            if (termo) {
+            if (termo || termoForn) {
                 const cod = (i['Codigo'] || '').toString().toLowerCase();
                 const prod = (i['Produto'] || '').toLowerCase();
                 const forn = (mapasGlobal.fornecedor.get(i['Codigo']?.toString()) || '').toLowerCase();
-                return cod.includes(termo) || prod.includes(termo) || forn.includes(termo);
+                let match = true;
+                if (termo) match = match && (cod.includes(termo) || prod.includes(termo));
+                if (termoForn) match = match && forn.includes(termoForn);
+                return match;
             }
             return true;
         });
@@ -1032,13 +1058,11 @@
         const agruparFornecedor = document.getElementById('agruparFornecedor')?.checked || false;
         const agruparPalete = document.getElementById('agruparPalete')?.checked || false;
 
-        // Se nenhum agrupamento selecionado, exibir lista única (sem agrupamento)
         if (!agruparData && !agruparFornecedor && !agruparPalete) {
             renderizarSemAgrupamento(itens);
             return;
         }
 
-        // Ordem dos níveis: Data, Fornecedor, Palete
         const niveis = [];
         if (agruparData) niveis.push('data');
         if (agruparFornecedor) niveis.push('fornecedor');
@@ -1066,26 +1090,19 @@
         }
 
         function agruparPorNiveis(lista, nivelIndex) {
-            if (nivelIndex >= niveis.length) {
-                return lista; // lista de itens
-            }
+            if (nivelIndex >= niveis.length) return lista;
             const nivel = niveis[nivelIndex];
             const grupos = new Map();
-
             for (const item of lista) {
                 let chave;
-                if (nivel === 'data') {
-                    chave = item['Data Entrada'] || 'Sem data';
-                } else if (nivel === 'fornecedor') {
+                if (nivel === 'data') chave = item['Data Entrada'] || 'Sem data';
+                else if (nivel === 'fornecedor') {
                     const cod = item['Codigo']?.toString();
                     chave = mapasGlobal.fornecedor.get(cod) || 'Não informado';
-                } else if (nivel === 'palete') {
-                    chave = item['Palete'] || 'SEM PALETE';
-                }
+                } else if (nivel === 'palete') chave = item['Palete'] || 'SEM PALETE';
                 if (!grupos.has(chave)) grupos.set(chave, []);
                 grupos.get(chave).push(item);
             }
-
             const chavesOrdenadas = ordenarChavesGrupo(Array.from(grupos.keys()), nivel);
             const resultado = [];
             for (const chave of chavesOrdenadas) {
@@ -1102,9 +1119,7 @@
             let html = '';
             for (const grupo of estrutura) {
                 if (Array.isArray(grupo.itens) && grupo.itens.length === 0) continue;
-
                 if (Array.isArray(grupo.itens) && grupo.itens.length > 0 && typeof grupo.itens[0] === 'object' && !grupo.itens[0].nivel) {
-                    // Renderizar os itens finais
                     html += renderizarItens(grupo.itens, grupo.nivel, grupo.chave);
                 } else {
                     const titulo = `${grupo.nivel === 'data' ? 'Data Entrada' : grupo.nivel === 'fornecedor' ? 'Fornecedor' : 'Palete'}: ${grupo.chave}`;
@@ -1360,6 +1375,7 @@
 
     function aplicarFiltroAnalise() {
         const termo = buscaAnalise.value.trim().toLowerCase();
+        const termoForn = buscaAnaliseFornecedor.value.trim().toLowerCase();
         const hoje = new Date();
 
         if (!dadosEstoque || dadosEstoque.length === 0) {
@@ -1392,24 +1408,25 @@
                 motivo = `Dias sem venda: ${diasSemVenda}`;
             }
 
-            analise.push({
-                codigo: cod,
-                nome: est['Nome'] || '',
-                fornecedor: est['Fornecedor'] || '',
-                estoque: estoque,
-                diasSemVenda: diasSemVenda,
-                ultimaCompra: ultimaCompraStr,
-                sugestao: sugestao,
-                motivo: motivo
-            });
+            const fornecedor = est['Fornecedor'] || '';
+            let match = true;
+            if (termo) match = match && (cod.includes(termo) || (est['Nome'] || '').toLowerCase().includes(termo));
+            if (termoForn) match = match && fornecedor.toLowerCase().includes(termoForn);
+            if (match) {
+                analise.push({
+                    codigo: cod,
+                    nome: est['Nome'] || '',
+                    fornecedor: fornecedor,
+                    estoque: estoque,
+                    diasSemVenda: diasSemVenda,
+                    ultimaCompra: ultimaCompraStr,
+                    sugestao: sugestao,
+                    motivo: motivo
+                });
+            }
         }
 
         let filtrados = analise;
-        if (termo) {
-            filtrados = analise.filter(a => {
-                return a.codigo.includes(termo) || a.nome.toLowerCase().includes(termo) || a.fornecedor.toLowerCase().includes(termo);
-            });
-        }
 
         if (!ordenacao.analise.coluna) {
             filtrados.sort((a, b) => {
@@ -1552,14 +1569,20 @@
     abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
     buscaCod.addEventListener('input', aplicarFiltroCodBalanca);
     buscaEst.addEventListener('input', aplicarFiltroEstoque);
-    buscaPal.addEventListener('input', aplicarFiltroPaletes);
+    buscaEstFornecedor.addEventListener('input', aplicarFiltroEstoque);
     buscaAnalise.addEventListener('input', aplicarFiltroAnalise);
-    mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
-
+    buscaAnaliseFornecedor.addEventListener('input', aplicarFiltroAnalise);
+    mesAnoSelect.addEventListener('change', () => { /* only button triggers */ });
+    // Botões de visão
     btnVisaoCodBalanca.addEventListener('click', () => alternarVisao('codbalanca'));
     btnVisaoEstoque.addEventListener('click', () => alternarVisao('estoque'));
     btnVisaoPaletes.addEventListener('click', () => alternarVisao('paletes'));
     btnVisaoAnalise.addEventListener('click', () => alternarVisao('analise'));
+    // Botão Buscar para Paletes
+    btnBuscarPaletes.addEventListener('click', () => {
+        aplicarFiltroPaletes();
+    });
+    // Configuração de colunas
     btnConfigColunas.addEventListener('click', abrirModalColunas);
     fecharModal.addEventListener('click', fecharModalColunas);
     salvarColunasBtn.addEventListener('click', salvarColunasModal);
