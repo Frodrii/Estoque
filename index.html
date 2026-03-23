@@ -363,12 +363,15 @@
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
     </div>
 
-    <!-- Aba Código x Balança -->
+    <!-- ABA 1: Código x Balança -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
             <div class="filtros-top">
                 <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..."></div>
                 <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
+            </div>
+            <div class="filtros-botoes">
+                <button id="btnVisaoCodBalanca" class="btn-acao">🃏 Ver como Cards</button>
             </div>
         </div>
         <div id="statusCodBalanca" class="carregando">Carregando dados...</div>
@@ -376,12 +379,15 @@
         <div id="paginacaoCodBalanca" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- Aba Estoque Virtual -->
+    <!-- ABA 2: Estoque Virtual -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
                 <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
                 <div class="stats" id="statsEstoque">0 itens exibidos</div>
+            </div>
+            <div class="filtros-botoes">
+                <button id="btnVisaoEstoque" class="btn-acao">🃏 Ver como Cards</button>
             </div>
         </div>
         <div id="statusEstoque" class="carregando">Carregando dados...</div>
@@ -389,7 +395,7 @@
         <div id="paginacaoEstoque" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- Aba Itens por Palete -->
+    <!-- ABA 3: Itens por Palete -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
@@ -398,12 +404,15 @@
                 <div><label>📂 Agrupar por</label><select id="agruparPor"><option value="palete">Palete</option><option value="data">Data Entrada</option><option value="fornecedor">Fornecedor</option><option value="data_fornecedor">Data Entrada + Fornecedor</option></select></div>
                 <div class="stats" id="statsPalete">0 itens exibidos</div>
             </div>
+            <div class="filtros-botoes">
+                <button id="btnVisaoPaletes" class="btn-acao">🃏 Ver como Cards</button>
+            </div>
         </div>
         <div id="statusPalete" class="carregando">Carregando dados...</div>
         <div id="conteudoPalete"></div>
     </div>
 
-    <!-- Aba Análise de Estoque -->
+    <!-- ABA 4: Análise de Estoque -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
@@ -411,7 +420,7 @@
                 <div class="stats" id="statsAnalise">0 itens analisados</div>
             </div>
             <div class="filtros-botoes">
-                <button id="btnAlternarVisao" class="btn-acao">🃏 Ver como Cards</button>
+                <button id="btnVisaoAnalise" class="btn-acao">🃏 Ver como Cards</button>
                 <button id="btnConfigColunas" class="btn-acao">⚙️ Ocultar colunas</button>
             </div>
         </div>
@@ -421,7 +430,7 @@
     </div>
 </div>
 
-<!-- Modal para configuração de colunas -->
+<!-- Modal para configuração de colunas (apenas análise) -->
 <div id="modalColunas" class="modal-colunas">
     <div class="modal-conteudo">
         <h3>Selecione as colunas</h3>
@@ -473,6 +482,14 @@
         analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
     };
 
+    // Modos de visualização por aba
+    let visao = {
+        codbalanca: 'tabela',   // 'tabela' ou 'cards'
+        estoque: 'tabela',
+        paletes: 'tabela',
+        analise: 'tabela'
+    };
+
     // Configuração de colunas da análise
     const todasColunasAnalise = [
         { campo: 'codigo', label: 'Código', padrao: true },
@@ -486,7 +503,6 @@
     ];
 
     let colunasVisiveis = [];
-    let modoVisualizacao = 'tabela'; // 'tabela' ou 'cards'
 
     // Elementos DOM
     const topoDataDiv = document.getElementById('topoData');
@@ -526,12 +542,15 @@
         est: document.getElementById('paginacaoEstoque'),
         analise: document.getElementById('paginacaoAnalise')
     };
-    const btnAlternarVisao = document.getElementById('btnAlternarVisao');
+    const btnVisaoCodBalanca = document.getElementById('btnVisaoCodBalanca');
+    const btnVisaoEstoque = document.getElementById('btnVisaoEstoque');
+    const btnVisaoPaletes = document.getElementById('btnVisaoPaletes');
+    const btnVisaoAnalise = document.getElementById('btnVisaoAnalise');
     const btnConfigColunas = document.getElementById('btnConfigColunas');
     const modalColunas = document.getElementById('modalColunas');
     const checklistDiv = document.getElementById('checklistColunas');
     const fecharModal = document.getElementById('fecharModal');
-    const salvarColunas = document.getElementById('salvarColunas');
+    const salvarColunasBtn = document.getElementById('salvarColunas');
 
     // ==================== FUNÇÕES AUXILIARES ====================
     function normalizarNumero(valor) {
@@ -703,6 +722,47 @@
         aplicarFiltroAnalise();
     }
 
+    // ==================== PREFERÊNCIAS DE VISUALIZAÇÃO ====================
+    function carregarPreferenciasVisao() {
+        const storedVisaoCod = localStorage.getItem('visao_codbalanca');
+        if (storedVisaoCod === 'cards' || storedVisaoCod === 'tabela') visao.codbalanca = storedVisaoCod;
+        const storedVisaoEst = localStorage.getItem('visao_estoque');
+        if (storedVisaoEst === 'cards' || storedVisaoEst === 'tabela') visao.estoque = storedVisaoEst;
+        const storedVisaoPal = localStorage.getItem('visao_paletes');
+        if (storedVisaoPal === 'cards' || storedVisaoPal === 'tabela') visao.paletes = storedVisaoPal;
+        const storedVisaoAnal = localStorage.getItem('visao_analise');
+        if (storedVisaoAnal === 'cards' || storedVisaoAnal === 'tabela') visao.analise = storedVisaoAnal;
+        atualizarBotoesVisao();
+    }
+
+    function atualizarBotoesVisao() {
+        if (btnVisaoCodBalanca) btnVisaoCodBalanca.innerHTML = visao.codbalanca === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoEstoque) btnVisaoEstoque.innerHTML = visao.estoque === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoPaletes) btnVisaoPaletes.innerHTML = visao.paletes === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoAnalise) btnVisaoAnalise.innerHTML = visao.analise === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+    }
+
+    function alternarVisao(aba) {
+        if (aba === 'codbalanca') {
+            visao.codbalanca = visao.codbalanca === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_codbalanca', visao.codbalanca);
+            aplicarFiltroCodBalanca();
+        } else if (aba === 'estoque') {
+            visao.estoque = visao.estoque === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_estoque', visao.estoque);
+            aplicarFiltroEstoque();
+        } else if (aba === 'paletes') {
+            visao.paletes = visao.paletes === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_paletes', visao.paletes);
+            aplicarFiltroPaletes();
+        } else if (aba === 'analise') {
+            visao.analise = visao.analise === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_analise', visao.analise);
+            aplicarFiltroAnalise();
+        }
+        atualizarBotoesVisao();
+    }
+
     // ==================== ABA CÓDIGO X BALANÇA ====================
     function aplicarFiltroCodBalanca() {
         const termo = buscaCod.value.trim().toLowerCase();
@@ -734,20 +794,47 @@
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead>`
-            + `<th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>`
-            + `<th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>`
-            + `<th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>`
-            + `</thead><tbody>`;
-        ordenados.forEach(i => {
-            html += `<tr>
-                        <td>${i['Balanca'] || ''}</td>
-                        <td>${i['Cod'] || ''}</td>
-                        <td>${i['Produto'] || ''}</td>
-                     </tr>`;
-        });
-        html += `</tbody></table></div>`;
-        conteudoDivs.cod.innerHTML = html;
+        if (visao.codbalanca === 'tabela') {
+            let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead>`
+                + `<th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>`
+                + `<th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>`
+                + `<th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>`
+                + `</thead><tbody>`;
+            ordenados.forEach(i => {
+                html += `<tr>
+                            <td>${i['Balanca'] || ''}</td>
+                            <td>${i['Cod'] || ''}</td>
+                            <td>${i['Produto'] || ''}</td>
+                         </tr>`;
+            });
+            html += `</tbody></table></div>`;
+            conteudoDivs.cod.innerHTML = html;
+
+            document.querySelectorAll('#tabela-codbalanca th .ordenar-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const col = btn.dataset.coluna;
+                    if (ordenacao.codbalanca.coluna === col) {
+                        ordenacao.codbalanca.direcao = ordenacao.codbalanca.direcao === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        ordenacao.codbalanca.coluna = col;
+                        ordenacao.codbalanca.direcao = 'asc';
+                    }
+                    renderizarCodBalanca();
+                });
+            });
+        } else {
+            // Modo cards
+            let html = `<div class="cards-view">`;
+            for (const item of ordenados) {
+                html += `<div class="card-item">
+                            <div class="card-linha"><span class="label">Balança:</span><span class="valor">${item['Balanca'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Cod'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
+                         </div>`;
+            }
+            html += `</div>`;
+            conteudoDivs.cod.innerHTML = html;
+        }
 
         if (totalPaginas > 1) {
             paginacaoDivs.cod.style.display = 'flex';
@@ -755,19 +842,6 @@
         } else {
             paginacaoDivs.cod.style.display = 'none';
         }
-
-        document.querySelectorAll('#tabela-codbalanca th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                if (ordenacao.codbalanca.coluna === col) {
-                    ordenacao.codbalanca.direcao = ordenacao.codbalanca.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacao.codbalanca.coluna = col;
-                    ordenacao.codbalanca.direcao = 'asc';
-                }
-                renderizarCodBalanca();
-            });
-        });
     }
 
     // ==================== ABA ESTOQUE VIRTUAL ====================
@@ -802,25 +876,60 @@
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead>`;
-        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Fornecedor'];
-        colunas.forEach(col => {
-            html += `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`;
-        });
-        html += `</thead><tbody>`;
-        ordenados.forEach(i => {
-            html += `<tr>
-                        <td>${i['Codigo'] || ''}</td>
-                        <td>${i['Nome'] || ''}</td>
-                        <td class="qtde">${i['Estoque'] || '0'}</td>
-                        <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                        <td>${i['Última venda'] || ''}</td>
-                        <td>${i['Última Compra'] || ''}</td>
-                        <td>${i['Fornecedor'] || ''}</td>
-                     </tr>`;
-        });
-        html += `</tbody></table></div>`;
-        conteudoDivs.est.innerHTML = html;
+        if (visao.estoque === 'tabela') {
+            let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead>`;
+            const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Fornecedor'];
+            colunas.forEach(col => {
+                html += `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`;
+            });
+            html += `</thead><tbody>`;
+            ordenados.forEach(i => {
+                html += `<tr>
+                            <td>${i['Codigo'] || ''}</td>
+                            <td>${i['Nome'] || ''}</td>
+                            <td class="qtde">${i['Estoque'] || '0'}</td>
+                            <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                            <td>${i['Última venda'] || ''}</td>
+                            <td>${i['Última Compra'] || ''}</td>
+                            <td>${i['Fornecedor'] || ''}</td>
+                         </tr>`;
+            });
+            html += `</tbody></table></div>`;
+            conteudoDivs.est.innerHTML = html;
+
+            document.querySelectorAll('#tabela-estoque th .ordenar-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const col = btn.dataset.coluna;
+                    const tipo = getTipoColuna('estoque', col);
+                    if (ordenacao.estoque.coluna === col) {
+                        ordenacao.estoque.direcao = ordenacao.estoque.direcao === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        ordenacao.estoque.coluna = col;
+                        ordenacao.estoque.direcao = 'asc';
+                    }
+                    const novosOrdenados = ordenarDados(paginacao.estoque.dadosFiltrados, ordenacao.estoque.coluna, ordenacao.estoque.direcao, tipo);
+                    paginacao.estoque.dadosFiltrados = novosOrdenados;
+                    paginacao.estoque.paginaAtual = 1;
+                    renderizarEstoque();
+                });
+            });
+        } else {
+            // Cards
+            let html = `<div class="cards-view">`;
+            for (const item of ordenados) {
+                html += `<div class="card-item">
+                            <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Nome:</span><span class="valor">${item['Nome'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Estoque:</span><span class="valor">${item['Estoque'] || '0'}</span></div>
+                            <div class="card-linha"><span class="label">Dias sem venda:</span><span class="valor">${item['Dias sem venda'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Última venda:</span><span class="valor">${item['Última venda'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Última Compra:</span><span class="valor">${item['Última Compra'] || ''}</span></div>
+                            <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${item['Fornecedor'] || ''}</span></div>
+                         </div>`;
+            }
+            html += `</div>`;
+            conteudoDivs.est.innerHTML = html;
+        }
 
         if (totalPaginas > 1) {
             paginacaoDivs.est.style.display = 'flex';
@@ -828,23 +937,6 @@
         } else {
             paginacaoDivs.est.style.display = 'none';
         }
-
-        document.querySelectorAll('#tabela-estoque th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                const tipo = getTipoColuna('estoque', col);
-                if (ordenacao.estoque.coluna === col) {
-                    ordenacao.estoque.direcao = ordenacao.estoque.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacao.estoque.coluna = col;
-                    ordenacao.estoque.direcao = 'asc';
-                }
-                const novosOrdenados = ordenarDados(paginacao.estoque.dadosFiltrados, ordenacao.estoque.coluna, ordenacao.estoque.direcao, tipo);
-                paginacao.estoque.dadosFiltrados = novosOrdenados;
-                paginacao.estoque.paginaAtual = 1;
-                renderizarEstoque();
-            });
-        });
     }
 
     // ==================== ABA ITENS POR PALETE ====================
@@ -912,46 +1004,82 @@
                 for (const forn of fornsOrdenadas) {
                     const itensForn = gruposForn[forn];
                     html += `<div class="subtitulo">Fornecedor: ${forn}</div>`;
-                    html += `<div class="tabela-wrapper"><table><thead><tr>
-                                <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                                <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                                <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                                <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                                <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                                <th>Fornecedor</th>
-                                <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                             </tr></thead><tbody>`;
-                    for (const item of itensForn) {
-                        const cod = item['Codigo']?.toString();
-                        const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                        const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                        let sugestao = '', classe = '';
-                        if (estoqueAtual > 0 && diasSemVenda > 60) {
-                            sugestao = '⚠️ Baixo giro';
-                            classe = 'negativo';
-                        } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                            sugestao = '📦 Excesso de entrada';
-                            classe = 'atencao';
-                        } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                            sugestao = '🔄 Prioridade de venda';
-                            classe = 'positivo';
-                        } else {
-                            sugestao = 'OK';
+                    if (visao.paletes === 'tabela') {
+                        html += `<div class="tabela-wrapper"><table><thead><tr>
+                                    <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+                                    <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+                                    <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
+                                    <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
+                                    <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
+                                    <th>Fornecedor</th>
+                                    <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+                                  </tr></thead><tbody>`;
+                        for (const item of itensForn) {
+                            const cod = item['Codigo']?.toString();
+                            const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                            const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                            let sugestao = '', classe = '';
+                            if (estoqueAtual > 0 && diasSemVenda > 60) {
+                                sugestao = '⚠️ Baixo giro';
+                                classe = 'negativo';
+                            } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                                sugestao = '📦 Excesso de entrada';
+                                classe = 'atencao';
+                            } else if (estoqueAtual === 0 && diasSemVenda > 30) {
+                                sugestao = '🔄 Prioridade de venda';
+                                classe = 'positivo';
+                            } else {
+                                sugestao = 'OK';
+                            }
+                            const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                            html += `<tr class="${classe}">
+                                        <td class="codigo">${item['Codigo'] || ''}</td>
+                                        <td>${item['Produto'] || ''}</td>
+                                        <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
+                                        <td>${item['Validade'] || ''}</td>
+                                        <td>${item['Data Entrada'] || ''}</td>
+                                        <td>${fornItem}</td>
+                                        <td class="qtde">${estoqueAtual}</td>
+                                        <td class="qtde">${diasSemVenda}</td>
+                                        <td>${sugestao}</td>
+                                      </tr>`;
                         }
-                        const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                        html += `<tr class="${classe}">
-                                    <td class="codigo">${item['Codigo'] || ''}</td>
-                                    <td>${item['Produto'] || ''}</td>
-                                    <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                                    <td>${item['Validade'] || ''}</td>
-                                    <td>${item['Data Entrada'] || ''}</td>
-                                    <td>${fornItem}</td>
-                                    <td class="qtde">${estoqueAtual}</td>
-                                    <td class="qtde">${diasSemVenda}</td>
-                                    <td>${sugestao}</td>
-                                  </tr>`;
+                        html += `</tbody></table></div>`;
+                    } else {
+                        // Cards
+                        html += `<div class="cards-view">`;
+                        for (const item of itensForn) {
+                            const cod = item['Codigo']?.toString();
+                            const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                            const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                            let sugestao = '', classe = '';
+                            if (estoqueAtual > 0 && diasSemVenda > 60) {
+                                sugestao = '⚠️ Baixo giro';
+                                classe = 'negativo';
+                            } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                                sugestao = '📦 Excesso de entrada';
+                                classe = 'atencao';
+                            } else if (estoqueAtual === 0 && diasSemVenda > 30) {
+                                sugestao = '🔄 Prioridade de venda';
+                                classe = 'positivo';
+                            } else {
+                                sugestao = 'OK';
+                            }
+                            const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                            html += `<div class="card-item ${classe}">
+                                        <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
+                                        <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
+                                        <div class="card-linha"><span class="label">Qtde:</span><span class="valor">${item['Qtde Esperada'] || '0'}</span></div>
+                                        <div class="card-linha"><span class="label">Validade:</span><span class="valor">${item['Validade'] || ''}</span></div>
+                                        <div class="card-linha"><span class="label">Data Entrada:</span><span class="valor">${item['Data Entrada'] || ''}</span></div>
+                                        <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
+                                        <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
+                                        <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
+                                        <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
+                                      </div>`;
+                        }
+                        html += `</div>`;
                     }
-                    html += `</tbody></table></div>`;
                 }
                 html += `</div>`;
             }
@@ -960,7 +1088,7 @@
             return;
         }
 
-        // Agrupamento simples
+        // Agrupamento simples (palete, data ou fornecedor)
         const grupos = {};
         for (const item of itens) {
             let chave;
@@ -991,46 +1119,83 @@
             const itensGrupo = grupos[chave];
             html += `<div class="bloco-palete">`;
             html += `<div class="titulo-palete">${agrupar === 'palete' ? 'Palete' : agrupar === 'data' ? 'Data Entrada' : 'Fornecedor'}: ${chave}</div>`;
-            html += `<div class="tabela-wrapper"><table><thead><tr>
-                        <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                        <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                        <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                        <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                        <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                        <th>Fornecedor</th>
-                        <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                     </tr></thead><tbody>`;
-            for (const item of itensGrupo) {
-                const cod = item['Codigo']?.toString();
-                const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                let sugestao = '', classe = '';
-                if (estoqueAtual > 0 && diasSemVenda > 60) {
-                    sugestao = '⚠️ Baixo giro';
-                    classe = 'negativo';
-                } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                    sugestao = '📦 Excesso de entrada';
-                    classe = 'atencao';
-                } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                    sugestao = '🔄 Prioridade de venda';
-                    classe = 'positivo';
-                } else {
-                    sugestao = 'OK';
+            if (visao.paletes === 'tabela') {
+                html += `<div class="tabela-wrapper"><table><thead><tr>
+                            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+                            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+                            <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
+                            <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
+                            <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
+                            <th>Fornecedor</th>
+                            <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+                          </tr></thead><tbody>`;
+                for (const item of itensGrupo) {
+                    const cod = item['Codigo']?.toString();
+                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                    let sugestao = '', classe = '';
+                    if (estoqueAtual > 0 && diasSemVenda > 60) {
+                        sugestao = '⚠️ Baixo giro';
+                        classe = 'negativo';
+                    } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                        sugestao = '📦 Excesso de entrada';
+                        classe = 'atencao';
+                    } else if (estoqueAtual === 0 && diasSemVenda > 30) {
+                        sugestao = '🔄 Prioridade de venda';
+                        classe = 'positivo';
+                    } else {
+                        sugestao = 'OK';
+                    }
+                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                    html += `<tr class="${classe}">
+                                <td class="codigo">${item['Codigo'] || ''}</td>
+                                <td>${item['Produto'] || ''}</td>
+                                <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
+                                <td>${item['Validade'] || ''}</td>
+                                <td>${item['Data Entrada'] || ''}</td>
+                                <td>${fornItem}</td>
+                                <td class="qtde">${estoqueAtual}</td>
+                                <td class="qtde">${diasSemVenda}</td>
+                                <td>${sugestao}</td>
+                              </tr>`;
                 }
-                const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                html += `<tr class="${classe}">
-                            <td class="codigo">${item['Codigo'] || ''}</td>
-                            <td>${item['Produto'] || ''}</td>
-                            <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                            <td>${item['Validade'] || ''}</td>
-                            <td>${item['Data Entrada'] || ''}</td>
-                            <td>${fornItem}</td>
-                            <td class="qtde">${estoqueAtual}</td>
-                            <td class="qtde">${diasSemVenda}</td>
-                            <td>${sugestao}</td>
-                          </tr>`;
+                html += `</tbody></table></div>`;
+            } else {
+                // Cards
+                html += `<div class="cards-view">`;
+                for (const item of itensGrupo) {
+                    const cod = item['Codigo']?.toString();
+                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                    let sugestao = '', classe = '';
+                    if (estoqueAtual > 0 && diasSemVenda > 60) {
+                        sugestao = '⚠️ Baixo giro';
+                        classe = 'negativo';
+                    } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                        sugestao = '📦 Excesso de entrada';
+                        classe = 'atencao';
+                    } else if (estoqueAtual === 0 && diasSemVenda > 30) {
+                        sugestao = '🔄 Prioridade de venda';
+                        classe = 'positivo';
+                    } else {
+                        sugestao = 'OK';
+                    }
+                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                    html += `<div class="card-item ${classe}">
+                                <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
+                                <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
+                                <div class="card-linha"><span class="label">Qtde:</span><span class="valor">${item['Qtde Esperada'] || '0'}</span></div>
+                                <div class="card-linha"><span class="label">Validade:</span><span class="valor">${item['Validade'] || ''}</span></div>
+                                <div class="card-linha"><span class="label">Data Entrada:</span><span class="valor">${item['Data Entrada'] || ''}</span></div>
+                                <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
+                                <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
+                                <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
+                                <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
+                              </div>`;
+                }
+                html += `</div>`;
             }
-            html += `</tbody></table></div></div>`;
+            html += `</div>`;
         }
         conteudoDivs.pal.innerHTML = html;
         attachOrdenacaoPaletes();
@@ -1052,36 +1217,17 @@
         });
     }
 
-    // ==================== ABA ANÁLISE DE ESTOQUE (COM OCULTAR COLUNAS E CARDS) ====================
-    function carregarPreferencias() {
+    // ==================== ABA ANÁLISE DE ESTOQUE ====================
+    function carregarPreferenciasAnalise() {
         const savedColunas = localStorage.getItem('analise_colunas');
         if (savedColunas) {
             colunasVisiveis = JSON.parse(savedColunas);
         } else {
             colunasVisiveis = todasColunasAnalise.filter(c => c.padrao).map(c => c.campo);
         }
-        const savedModo = localStorage.getItem('analise_modo');
-        if (savedModo === 'cards' || savedModo === 'tabela') {
-            modoVisualizacao = savedModo;
-        } else {
-            modoVisualizacao = 'tabela';
-        }
-        atualizarBotaoVisao();
-    }
-
-    function atualizarBotaoVisao() {
-        if (btnAlternarVisao) {
-            btnAlternarVisao.innerHTML = modoVisualizacao === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
-        }
-    }
-
-    function salvarPreferencias() {
-        localStorage.setItem('analise_colunas', JSON.stringify(colunasVisiveis));
-        localStorage.setItem('analise_modo', modoVisualizacao);
     }
 
     function abrirModalColunas() {
-        // Monta checklist
         checklistDiv.innerHTML = '';
         todasColunasAnalise.forEach(col => {
             const label = document.createElement('label');
@@ -1108,15 +1254,8 @@
         checkboxes.forEach(chk => {
             if (chk.checked) colunasVisiveis.push(chk.value);
         });
-        salvarPreferencias();
+        localStorage.setItem('analise_colunas', JSON.stringify(colunasVisiveis));
         fecharModalColunas();
-        aplicarFiltroAnalise(); // re-renderiza
-    }
-
-    function alternarModo() {
-        modoVisualizacao = modoVisualizacao === 'tabela' ? 'cards' : 'tabela';
-        salvarPreferencias();
-        atualizarBotaoVisao();
         aplicarFiltroAnalise();
     }
 
@@ -1204,8 +1343,7 @@
             return;
         }
 
-        if (modoVisualizacao === 'tabela') {
-            // Montar tabela com colunas visíveis
+        if (visao.analise === 'tabela') {
             let html = `<div class="tabela-wrapper"><table id="tabela-analise"><thead><tr>`;
             for (const col of todasColunasAnalise) {
                 if (colunasVisiveis.includes(col.campo)) {
@@ -1231,7 +1369,6 @@
             html += `</tbody></table></div>`;
             conteudoDivs.analise.innerHTML = html;
 
-            // Eventos de ordenação
             document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
                 btn.addEventListener('click', e => {
                     const col = btn.dataset.coluna;
@@ -1249,7 +1386,7 @@
                 });
             });
         } else {
-            // Modo cards
+            // Cards
             let html = `<div class="cards-view">`;
             for (const a of paginaDados) {
                 let classe = a.sugestao !== 'OK' ? 'negativo' : '';
@@ -1264,7 +1401,6 @@
                         }
                     }
                 }
-                // Adiciona motivo sempre se for diferente de OK
                 if (a.sugestao !== 'OK' && a.motivo && !colunasVisiveis.includes('motivo')) {
                     html += `<div class="card-linha motivo"><span class="label">Detalhe:</span><span class="valor">${a.motivo}</span></div>`;
                 }
@@ -1323,10 +1459,15 @@
     buscaAnalise.addEventListener('input', aplicarFiltroAnalise);
     mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
     agruparPorSelect.addEventListener('change', aplicarFiltroPaletes);
-    btnAlternarVisao.addEventListener('click', alternarModo);
+
+    btnVisaoCodBalanca.addEventListener('click', () => alternarVisao('codbalanca'));
+    btnVisaoEstoque.addEventListener('click', () => alternarVisao('estoque'));
+    btnVisaoPaletes.addEventListener('click', () => alternarVisao('paletes'));
+    btnVisaoAnalise.addEventListener('click', () => alternarVisao('analise'));
     btnConfigColunas.addEventListener('click', abrirModalColunas);
     fecharModal.addEventListener('click', fecharModalColunas);
-    salvarColunas.addEventListener('click', salvarColunasModal);
+    salvarColunasBtn.addEventListener('click', salvarColunasModal);
+
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('pag-btn')) {
             const pagina = parseInt(e.target.dataset.pagina);
@@ -1336,7 +1477,8 @@
     });
 
     // ==================== INICIALIZAÇÃO ====================
-    carregarPreferencias();
+    carregarPreferenciasVisao();
+    carregarPreferenciasAnalise();
     Promise.allSettled([
         carregarAtualizada(),
         carregarCodBalanca(),
