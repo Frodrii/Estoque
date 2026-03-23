@@ -68,17 +68,21 @@
 
         .filtros {
             background: white;
-            padding: 20px;
             border-radius: 16px;
             margin-bottom: 24px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
             border: 1px solid #e2e8f0;
         }
-        .filtros > div { width: 100%; }
-        .filtros label {
+        .filtros-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            align-items: flex-end;
+        }
+        .filtros-top > div { flex: 1; min-width: 150px; }
+        .filtros-top label {
             font-weight: 600;
             color: #334155;
             display: block;
@@ -86,7 +90,7 @@
             font-size: 0.85rem;
             text-transform: uppercase;
         }
-        .filtros input, .filtros select {
+        .filtros-top input, .filtros-top select {
             width: 100%;
             padding: 12px 16px;
             font-size: 1rem;
@@ -96,24 +100,45 @@
             transition: all 0.2s;
             background: white;
         }
-        .filtros input:focus, .filtros select:focus {
+        .filtros-top input:focus, .filtros-top select:focus {
             border-color: #2563eb;
             outline: none;
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
+        .filtros-botoes {
+            display: flex;
+            gap: 12px;
+            padding: 12px 20px 20px 20px;
+            background: #fafcff;
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .btn-acao {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-acao:hover {
+            background: #e2e8f0;
+        }
         .stats {
             background: #eef2f6;
-            padding: 10px 16px;
+            padding: 8px 16px;
             border-radius: 40px;
             color: #1e293b;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 600;
             text-align: center;
             white-space: nowrap;
-            width: fit-content;
-            margin-top: 4px;
         }
-
         .bloco-dados, .bloco-palete {
             background: white;
             border-radius: 16px;
@@ -139,7 +164,6 @@
             padding-left: 8px;
             border-left: 3px solid #2563eb;
         }
-
         .tabela-wrapper {
             position: relative;
             max-height: 70vh;
@@ -192,6 +216,50 @@
         .vazio { color: #475569; background: #f1f5f9; font-style: italic; }
         .carregando { color: #2563eb; background: #eff6ff; }
 
+        /* Cards */
+        .cards-view {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 4px solid #2563eb;
+            transition: all 0.2s;
+        }
+        .card-item.negativo {
+            border-left-color: #dc2626;
+            background: #fff5f5;
+        }
+        .card-item .card-linha {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .card-item .label {
+            font-weight: 600;
+            color: #475569;
+            min-width: 100px;
+        }
+        .card-item .valor {
+            font-weight: 500;
+            text-align: right;
+            word-break: break-word;
+            flex: 1;
+        }
+        .card-item .sugestao {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #2563eb;
+        }
+
         /* Paginação */
         .paginacao {
             display: flex;
@@ -203,11 +271,13 @@
         .pag-btn {
             background: white;
             border: 1px solid #cbd5e1;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s;
+            min-width: 44px;
+            text-align: center;
         }
         .pag-btn.ativo {
             background: #2563eb;
@@ -218,17 +288,67 @@
             background: #e2e8f0;
         }
 
+        /* Modal simples para colunas */
+        .modal-colunas {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-colunas.ativo {
+            display: flex;
+        }
+        .modal-conteudo {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 90%;
+            width: 300px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-conteudo h3 {
+            margin-bottom: 16px;
+        }
+        .modal-conteudo label {
+            display: block;
+            margin: 8px 0;
+        }
+        .modal-botoes {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .modal-botoes button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-salvar {
+            background: #2563eb;
+            color: white;
+        }
+
         @media (min-width: 768px) {
             body { padding: 24px; }
             h1 { font-size: 2.2rem; margin-bottom: 16px; }
-            .filtros { flex-direction: row; align-items: flex-end; padding: 24px; gap: 20px; }
-            .filtros > div { flex: 1; }
-            .stats { padding: 10px 24px; margin-top: 0; }
             .bloco-dados, .bloco-palete { padding: 24px; margin-bottom: 32px; }
             table { font-size: 0.95rem; }
             th, td { padding: 14px 16px; }
         }
-        @media (max-width: 480px) { .aba-btn { padding: 8px 14px; font-size: 0.85rem; } }
+        @media (max-width: 480px) {
+            .aba-btn { padding: 8px 12px; font-size: 0.8rem; }
+            .filtros-top { flex-direction: column; align-items: stretch; }
+            .filtros-top > div { width: 100%; }
+            .stats { width: auto; text-align: center; }
+        }
     </style>
 </head>
 <body>
@@ -243,45 +363,73 @@
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
     </div>
 
+    <!-- Aba Código x Balança -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
-            <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..."></div>
-            <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
+            <div class="filtros-top">
+                <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..."></div>
+                <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
+            </div>
         </div>
         <div id="statusCodBalanca" class="carregando">Carregando dados...</div>
         <div id="conteudoCodBalanca"></div>
         <div id="paginacaoCodBalanca" class="paginacao" style="display: none;"></div>
     </div>
 
+    <!-- Aba Estoque Virtual -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
-            <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
-            <div class="stats" id="statsEstoque">0 itens exibidos</div>
+            <div class="filtros-top">
+                <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
+                <div class="stats" id="statsEstoque">0 itens exibidos</div>
+            </div>
         </div>
         <div id="statusEstoque" class="carregando">Carregando dados...</div>
         <div id="conteudoEstoque"></div>
         <div id="paginacaoEstoque" class="paginacao" style="display: none;"></div>
     </div>
 
+    <!-- Aba Itens por Palete -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
-            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
-            <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
-            <div><label>📂 Agrupar por</label><select id="agruparPor"><option value="palete">Palete</option><option value="data">Data Entrada</option><option value="fornecedor">Fornecedor</option><option value="data_fornecedor">Data Entrada + Fornecedor</option></select></div>
-            <div class="stats" id="statsPalete">0 itens exibidos</div>
+            <div class="filtros-top">
+                <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
+                <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
+                <div><label>📂 Agrupar por</label><select id="agruparPor"><option value="palete">Palete</option><option value="data">Data Entrada</option><option value="fornecedor">Fornecedor</option><option value="data_fornecedor">Data Entrada + Fornecedor</option></select></div>
+                <div class="stats" id="statsPalete">0 itens exibidos</div>
+            </div>
         </div>
         <div id="statusPalete" class="carregando">Carregando dados...</div>
         <div id="conteudoPalete"></div>
     </div>
 
+    <!-- Aba Análise de Estoque -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
-            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
-            <div class="stats" id="statsAnalise">0 itens analisados</div>
+            <div class="filtros-top">
+                <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
+                <div class="stats" id="statsAnalise">0 itens analisados</div>
+            </div>
+            <div class="filtros-botoes">
+                <button id="btnAlternarVisao" class="btn-acao">🃏 Ver como Cards</button>
+                <button id="btnConfigColunas" class="btn-acao">⚙️ Ocultar colunas</button>
+            </div>
         </div>
         <div id="statusAnalise" class="carregando">Carregando dados...</div>
         <div id="conteudoAnalise"></div>
         <div id="paginacaoAnalise" class="paginacao" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Modal para configuração de colunas -->
+<div id="modalColunas" class="modal-colunas">
+    <div class="modal-conteudo">
+        <h3>Selecione as colunas</h3>
+        <div id="checklistColunas"></div>
+        <div class="modal-botoes">
+            <button id="fecharModal">Cancelar</button>
+            <button id="salvarColunas" class="btn-salvar">Salvar</button>
+        </div>
     </div>
 </div>
 
@@ -298,22 +446,19 @@
     const URL_PALETES = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_PALETES}`;
     const URL_ATUALIZADA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ATUALIZADA}`;
 
-    // Dados globais
     let dadosCodBalanca = [];
     let dadosEstoque = [];
     let dadosPaletes = [];
     let dadosAtualizada = [];
 
-    // Mapas auxiliares
     let mapasGlobal = {
-        fornecedor: new Map(),    // código -> fornecedor
-        estoque: new Map(),       // código -> estoque (numérico)
-        diasSemVenda: new Map()   // código -> dias sem venda
+        fornecedor: new Map(),
+        estoque: new Map(),
+        diasSemVenda: new Map()
     };
 
     let ultimaAtualizacao = new Date();
 
-    // Estados de ordenação
     let ordenacao = {
         codbalanca: { coluna: 'Balanca', direcao: 'asc' },
         estoque: { coluna: null, direcao: 'asc' },
@@ -321,13 +466,27 @@
         analise: { coluna: null, direcao: 'asc' }
     };
 
-    // Paginação (linhas por página)
     const ITENS_POR_PAGINA = 100;
     let paginacao = {
         codbalanca: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
         estoque: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
         analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
     };
+
+    // Configuração de colunas da análise
+    const todasColunasAnalise = [
+        { campo: 'codigo', label: 'Código', padrao: true },
+        { campo: 'nome', label: 'Produto', padrao: true },
+        { campo: 'fornecedor', label: 'Fornecedor', padrao: true },
+        { campo: 'estoque', label: 'Estoque', padrao: true },
+        { campo: 'diasSemVenda', label: 'Dias sem venda', padrao: true },
+        { campo: 'ultimaCompra', label: 'Última Compra', padrao: true },
+        { campo: 'sugestao', label: 'Sugestão', padrao: true },
+        { campo: 'motivo', label: 'Detalhe', padrao: false }
+    ];
+
+    let colunasVisiveis = [];
+    let modoVisualizacao = 'tabela'; // 'tabela' ou 'cards'
 
     // Elementos DOM
     const topoDataDiv = document.getElementById('topoData');
@@ -367,6 +526,12 @@
         est: document.getElementById('paginacaoEstoque'),
         analise: document.getElementById('paginacaoAnalise')
     };
+    const btnAlternarVisao = document.getElementById('btnAlternarVisao');
+    const btnConfigColunas = document.getElementById('btnConfigColunas');
+    const modalColunas = document.getElementById('modalColunas');
+    const checklistDiv = document.getElementById('checklistColunas');
+    const fecharModal = document.getElementById('fecharModal');
+    const salvarColunas = document.getElementById('salvarColunas');
 
     // ==================== FUNÇÕES AUXILIARES ====================
     function normalizarNumero(valor) {
@@ -414,15 +579,12 @@
         });
     }
 
-    // Mapeia quais colunas são numéricas em cada aba
     function getTipoColuna(aba, coluna) {
         if (aba === 'estoque') {
             const numericas = ['Estoque', 'Dias sem venda'];
             if (numericas.includes(coluna)) return 'numero';
         } else if (aba === 'paletes') {
             const numericas = ['Qtde Esperada', 'Estoque Atual', 'Dias s/ Venda', 'Código'];
-            // Código pode ser tratado como string, mas se quiser ordenação numérica, descomente a linha abaixo
-            // if (coluna === 'Código') return 'numero';
             if (numericas.includes(coluna)) return 'numero';
         } else if (aba === 'analise') {
             const numericas = ['estoque', 'diasSemVenda'];
@@ -443,7 +605,6 @@
                 mapasGlobal.diasSemVenda.set(cod, parseInt(item['Dias sem venda']) || 0);
             }
         });
-        console.log('Mapas atualizados. Fornecedores:', mapasGlobal.fornecedor.size);
     }
 
     // ==================== CARREGAMENTO DOS DADOS ====================
@@ -457,7 +618,7 @@
                     if (parsed && !isNaN(parsed.getTime())) ultimaAtualizacao = parsed;
                 }
             }
-        } catch (e) { console.warn('Erro ao carregar atualização:', e); }
+        } catch (e) { console.warn(e); }
         atualizarTopoData();
     }
 
@@ -475,7 +636,7 @@
             statusDivs.cod.style.display = 'none';
             aplicarFiltroCodBalanca();
         } catch (err) {
-            statusDivs.cod.innerHTML = `<div class="erro">❌ Erro ao carregar "Código x Balança": ${err.message}</div>`;
+            statusDivs.cod.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
             conteudoDivs.cod.innerHTML = '';
         }
     }
@@ -487,12 +648,11 @@
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             dadosEstoque = await resp.json();
             if (!dadosEstoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
-            console.log('Estoque carregado, total:', dadosEstoque.length);
             atualizarMapasEstoque();
             statusDivs.est.style.display = 'none';
             aplicarFiltroEstoque();
         } catch (err) {
-            statusDivs.est.innerHTML = `<div class="erro">❌ Erro ao carregar "Estoque Virtual": ${err.message}</div>`;
+            statusDivs.est.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
             conteudoDivs.est.innerHTML = '';
         }
     }
@@ -505,14 +665,9 @@
             dadosPaletes = await resp.json();
             if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
 
-            // Se os mapas ainda não estiverem prontos, tenta carregar estoque
-            if (dadosEstoque.length === 0) {
-                await carregarEstoque();
-            } else {
-                atualizarMapasEstoque();
-            }
+            if (dadosEstoque.length === 0) await carregarEstoque();
+            else atualizarMapasEstoque();
 
-            // Preencher meses/anos
             const mesesAnos = new Set();
             dadosPaletes.forEach(i => {
                 const val = i['Validade'];
@@ -537,16 +692,13 @@
             statusDivs.pal.style.display = 'none';
             aplicarFiltroPaletes();
         } catch (err) {
-            statusDivs.pal.innerHTML = `<div class="erro">❌ Erro ao carregar "Itens por Palete": ${err.message}</div>`;
+            statusDivs.pal.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
             conteudoDivs.pal.innerHTML = '';
         }
     }
 
     async function carregarAnalise() {
-        if (dadosEstoque.length === 0) {
-            console.log('Carregando estoque para análise...');
-            await carregarEstoque();
-        }
+        if (dadosEstoque.length === 0) await carregarEstoque();
         statusDivs.analise.style.display = 'none';
         aplicarFiltroAnalise();
     }
@@ -577,7 +729,7 @@
         const ordenados = ordenarDados(paginaDados, ordenacao.codbalanca.coluna, ordenacao.codbalanca.direcao);
 
         if (!ordenados.length) {
-            conteudoDivs.cod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            conteudoDivs.cod.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
             paginacaoDivs.cod.style.display = 'none';
             return;
         }
@@ -589,10 +741,10 @@
             + `</thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
-                         <td>${i['Balanca'] || ''}</td>
-                         <td>${i['Cod'] || ''}</td>
-                         <td>${i['Produto'] || ''}</td>
-                      </tr>`;
+                        <td>${i['Balanca'] || ''}</td>
+                        <td>${i['Cod'] || ''}</td>
+                        <td>${i['Produto'] || ''}</td>
+                     </tr>`;
         });
         html += `</tbody></table></div>`;
         conteudoDivs.cod.innerHTML = html;
@@ -645,20 +797,17 @@
         const ordenados = ordenarDados(paginaDados, ordenacao.estoque.coluna, ordenacao.estoque.direcao);
 
         if (!ordenados.length) {
-            conteudoDivs.est.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            conteudoDivs.est.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
             paginacaoDivs.est.style.display = 'none';
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>
-            <th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-            <th>Nome <span class="ordenar-btn" data-coluna="Nome">⇅</span></th>
-            <th>Estoque <span class="ordenar-btn" data-coluna="Estoque">⇅</span></th>
-            <th>Dias sem venda <span class="ordenar-btn" data-coluna="Dias sem venda">⇅</span></th>
-            <th>Última venda <span class="ordenar-btn" data-coluna="Última venda">⇅</span></th>
-            <th>Última Compra <span class="ordenar-btn" data-coluna="Última Compra">⇅</span></th>
-            <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
-        </tr></thead><tbody>`;
+        let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead>`;
+        const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Fornecedor'];
+        colunas.forEach(col => {
+            html += `<th>${col} <span class="ordenar-btn" data-coluna="${col}">⇅</span></th>`;
+        });
+        html += `</thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
                         <td>${i['Codigo'] || ''}</td>
@@ -690,7 +839,6 @@
                     ordenacao.estoque.coluna = col;
                     ordenacao.estoque.direcao = 'asc';
                 }
-                // Reordenar os dados já filtrados, mas com o tipo correto
                 const novosOrdenados = ordenarDados(paginacao.estoque.dadosFiltrados, ordenacao.estoque.coluna, ordenacao.estoque.direcao, tipo);
                 paginacao.estoque.dadosFiltrados = novosOrdenados;
                 paginacao.estoque.paginaAtual = 1;
@@ -723,7 +871,6 @@
         });
 
         stats.pal.textContent = `${filtrados.length} itens exibidos`;
-        // Ordenar usando tipo adequado para cada coluna
         const tipo = getTipoColuna('paletes', ordenacao.paletes.coluna);
         const ordenados = ordenarDados(filtrados, ordenacao.paletes.coluna, ordenacao.paletes.direcao, tipo);
         renderizarPaletes(ordenados);
@@ -731,7 +878,7 @@
 
     function renderizarPaletes(itens) {
         if (!itens.length) {
-            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
+            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
             return;
         }
 
@@ -773,7 +920,7 @@
                                 <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                                 <th>Fornecedor</th>
                                 <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                            </tr></thead><tbody>`;
+                             </tr></thead><tbody>`;
                     for (const item of itensForn) {
                         const cod = item['Codigo']?.toString();
                         const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
@@ -905,13 +1052,79 @@
         });
     }
 
-    // ==================== ABA ANÁLISE DE ESTOQUE ====================
+    // ==================== ABA ANÁLISE DE ESTOQUE (COM OCULTAR COLUNAS E CARDS) ====================
+    function carregarPreferencias() {
+        const savedColunas = localStorage.getItem('analise_colunas');
+        if (savedColunas) {
+            colunasVisiveis = JSON.parse(savedColunas);
+        } else {
+            colunasVisiveis = todasColunasAnalise.filter(c => c.padrao).map(c => c.campo);
+        }
+        const savedModo = localStorage.getItem('analise_modo');
+        if (savedModo === 'cards' || savedModo === 'tabela') {
+            modoVisualizacao = savedModo;
+        } else {
+            modoVisualizacao = 'tabela';
+        }
+        atualizarBotaoVisao();
+    }
+
+    function atualizarBotaoVisao() {
+        if (btnAlternarVisao) {
+            btnAlternarVisao.innerHTML = modoVisualizacao === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        }
+    }
+
+    function salvarPreferencias() {
+        localStorage.setItem('analise_colunas', JSON.stringify(colunasVisiveis));
+        localStorage.setItem('analise_modo', modoVisualizacao);
+    }
+
+    function abrirModalColunas() {
+        // Monta checklist
+        checklistDiv.innerHTML = '';
+        todasColunasAnalise.forEach(col => {
+            const label = document.createElement('label');
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.value = col.campo;
+            chk.checked = colunasVisiveis.includes(col.campo);
+            label.appendChild(chk);
+            label.appendChild(document.createTextNode(' ' + col.label));
+            checklistDiv.appendChild(label);
+            label.style.display = 'block';
+            label.style.margin = '8px 0';
+        });
+        modalColunas.classList.add('ativo');
+    }
+
+    function fecharModalColunas() {
+        modalColunas.classList.remove('ativo');
+    }
+
+    function salvarColunasModal() {
+        const checkboxes = checklistDiv.querySelectorAll('input[type="checkbox"]');
+        colunasVisiveis = [];
+        checkboxes.forEach(chk => {
+            if (chk.checked) colunasVisiveis.push(chk.value);
+        });
+        salvarPreferencias();
+        fecharModalColunas();
+        aplicarFiltroAnalise(); // re-renderiza
+    }
+
+    function alternarModo() {
+        modoVisualizacao = modoVisualizacao === 'tabela' ? 'cards' : 'tabela';
+        salvarPreferencias();
+        atualizarBotaoVisao();
+        aplicarFiltroAnalise();
+    }
+
     function aplicarFiltroAnalise() {
         const termo = buscaAnalise.value.trim().toLowerCase();
         const hoje = new Date();
 
         if (!dadosEstoque || dadosEstoque.length === 0) {
-            console.warn('dadosEstoque vazio, não é possível analisar');
             stats.analise.textContent = '0 itens analisados';
             conteudoDivs.analise.innerHTML = '<div class="vazio">Nenhum dado de estoque carregado.</div>';
             paginacaoDivs.analise.style.display = 'none';
@@ -991,30 +1204,75 @@
             return;
         }
 
-        let html = `<div class="tabela-wrapper"><table id="tabela-analise"><thead><tr>
-            <th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th>
-            <th>Produto <span class="ordenar-btn" data-coluna="nome">⇅</span></th>
-            <th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th>
-            <th>Estoque <span class="ordenar-btn" data-coluna="estoque">⇅</span></th>
-            <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
-            <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
-            <th>Sugestão</th><th>Detalhe</th>
-        </tr></thead><tbody>`;
-        for (const a of paginaDados) {
-            let classe = a.sugestao !== 'OK' ? 'negativo' : '';
-            html += `<tr class="${classe}">
-                        <td>${a.codigo}</td>
-                        <td>${a.nome}</td>
-                        <td>${a.fornecedor}</td>
-                        <td class="qtde">${a.estoque}</td>
-                        <td class="qtde">${a.diasSemVenda}</td>
-                        <td>${a.ultimaCompra}</td>
-                        <td>${a.sugestao}</td>
-                        <td>${a.motivo}</td>
-                     </tr>`;
+        if (modoVisualizacao === 'tabela') {
+            // Montar tabela com colunas visíveis
+            let html = `<div class="tabela-wrapper"><table id="tabela-analise"><thead><tr>`;
+            for (const col of todasColunasAnalise) {
+                if (colunasVisiveis.includes(col.campo)) {
+                    html += `<th>${col.label} <span class="ordenar-btn" data-coluna="${col.campo}">⇅</span></th>`;
+                }
+            }
+            html += `</tr></thead><tbody>`;
+            for (const a of paginaDados) {
+                let classe = a.sugestao !== 'OK' ? 'negativo' : '';
+                html += `<tr class="${classe}">`;
+                for (const col of todasColunasAnalise) {
+                    if (colunasVisiveis.includes(col.campo)) {
+                        let valor = a[col.campo];
+                        if (col.campo === 'estoque' || col.campo === 'diasSemVenda') {
+                            html += `<td class="qtde">${valor}</td>`;
+                        } else {
+                            html += `<td>${valor}</td>`;
+                        }
+                    }
+                }
+                html += `</tr>`;
+            }
+            html += `</tbody></table></div>`;
+            conteudoDivs.analise.innerHTML = html;
+
+            // Eventos de ordenação
+            document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const col = btn.dataset.coluna;
+                    const tipo = getTipoColuna('analise', col);
+                    if (ordenacao.analise.coluna === col) {
+                        ordenacao.analise.direcao = ordenacao.analise.direcao === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        ordenacao.analise.coluna = col;
+                        ordenacao.analise.direcao = 'asc';
+                    }
+                    const novosOrdenados = ordenarDados(paginacao.analise.dadosFiltrados, ordenacao.analise.coluna, ordenacao.analise.direcao, tipo);
+                    paginacao.analise.dadosFiltrados = novosOrdenados;
+                    paginacao.analise.paginaAtual = 1;
+                    renderizarAnalise();
+                });
+            });
+        } else {
+            // Modo cards
+            let html = `<div class="cards-view">`;
+            for (const a of paginaDados) {
+                let classe = a.sugestao !== 'OK' ? 'negativo' : '';
+                html += `<div class="card-item ${classe}">`;
+                for (const col of todasColunasAnalise) {
+                    if (colunasVisiveis.includes(col.campo)) {
+                        let valor = a[col.campo];
+                        if (col.campo === 'sugestao') {
+                            html += `<div class="card-linha sugestao"><span class="label">${col.label}:</span><span class="valor">${valor}</span></div>`;
+                        } else {
+                            html += `<div class="card-linha"><span class="label">${col.label}:</span><span class="valor">${valor}</span></div>`;
+                        }
+                    }
+                }
+                // Adiciona motivo sempre se for diferente de OK
+                if (a.sugestao !== 'OK' && a.motivo && !colunasVisiveis.includes('motivo')) {
+                    html += `<div class="card-linha motivo"><span class="label">Detalhe:</span><span class="valor">${a.motivo}</span></div>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div>`;
+            conteudoDivs.analise.innerHTML = html;
         }
-        html += `</tbody></table></div>`;
-        conteudoDivs.analise.innerHTML = html;
 
         if (totalPaginas > 1) {
             paginacaoDivs.analise.style.display = 'flex';
@@ -1022,24 +1280,6 @@
         } else {
             paginacaoDivs.analise.style.display = 'none';
         }
-
-        document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const col = btn.dataset.coluna;
-                const tipo = getTipoColuna('analise', col);
-                if (ordenacao.analise.coluna === col) {
-                    ordenacao.analise.direcao = ordenacao.analise.direcao === 'asc' ? 'desc' : 'asc';
-                } else {
-                    ordenacao.analise.coluna = col;
-                    ordenacao.analise.direcao = 'asc';
-                }
-                // Reordenar os dados já filtrados, mas com o tipo correto
-                const novosOrdenados = ordenarDados(paginacao.analise.dadosFiltrados, ordenacao.analise.coluna, ordenacao.analise.direcao, tipo);
-                paginacao.analise.dadosFiltrados = novosOrdenados;
-                paginacao.analise.paginaAtual = 1;
-                renderizarAnalise();
-            });
-        });
     }
 
     // ==================== PAGINAÇÃO ====================
@@ -1083,7 +1323,10 @@
     buscaAnalise.addEventListener('input', aplicarFiltroAnalise);
     mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
     agruparPorSelect.addEventListener('change', aplicarFiltroPaletes);
-
+    btnAlternarVisao.addEventListener('click', alternarModo);
+    btnConfigColunas.addEventListener('click', abrirModalColunas);
+    fecharModal.addEventListener('click', fecharModalColunas);
+    salvarColunas.addEventListener('click', salvarColunasModal);
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('pag-btn')) {
             const pagina = parseInt(e.target.dataset.pagina);
@@ -1093,6 +1336,7 @@
     });
 
     // ==================== INICIALIZAÇÃO ====================
+    carregarPreferencias();
     Promise.allSettled([
         carregarAtualizada(),
         carregarCodBalanca(),
