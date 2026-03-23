@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>📊 Sistema de Consulta</title>
+    <title>📊 Sistema de Gestão de Setor</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -15,7 +15,6 @@
         }
         .container { max-width: 1400px; margin: 0 auto; }
 
-        /* Topo com data de atualização */
         .topo-data {
             text-align: center;
             background: #eef2ff;
@@ -34,7 +33,6 @@
             font-weight: 600;
         }
 
-        /* Abas fixas */
         .abas {
             display: flex;
             gap: 8px;
@@ -68,7 +66,6 @@
         .conteudo-aba { display: none; }
         .conteudo-aba.ativo { display: block; }
 
-        /* Filtros não fixos (rolam normalmente) */
         .filtros {
             background: white;
             padding: 20px;
@@ -117,7 +114,6 @@
             margin-top: 4px;
         }
 
-        /* Blocos e tabelas */
         .bloco-dados, .bloco-palete {
             background: white;
             border-radius: 16px;
@@ -144,7 +140,6 @@
             border-left: 3px solid #2563eb;
         }
 
-        /* Tabela com cabeçalho fixo */
         .tabela-wrapper {
             position: relative;
             max-height: 70vh;
@@ -186,7 +181,7 @@
         .positivo { background-color: #dcfce7; }
         .negativo { background-color: #fee2e2; }
         .atencao { background-color: #fff3bf; }
-        .erro, .vazio {
+        .erro, .vazio, .carregando {
             text-align: center;
             padding: 40px 16px;
             border-radius: 16px;
@@ -195,6 +190,33 @@
         }
         .erro { color: #b91c1c; background: #fee2e2; }
         .vazio { color: #475569; background: #f1f5f9; font-style: italic; }
+        .carregando { color: #2563eb; background: #eff6ff; }
+
+        /* Paginação */
+        .paginacao {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .pag-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .pag-btn.ativo {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .pag-btn:hover:not(.ativo) {
+            background: #e2e8f0;
+        }
 
         @media (min-width: 768px) {
             body { padding: 24px; }
@@ -212,7 +234,7 @@
 <body>
 <div class="container">
     <div class="topo-data" id="topoData">Carregando última atualização...</div>
-    <h1>📊 Sistema de Consulta</h1>
+    <h1>📊 Sistema de Gestão de Setor</h1>
 
     <div class="abas">
         <button class="aba-btn ativo" data-aba="codbalanca">⚖️ Código x Balança</button>
@@ -221,74 +243,50 @@
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
     </div>
 
-    <!-- ABA 1: Código x Balança -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
-            <div>
-                <label for="buscaCodBalanca">🔍 Buscar por Código ou Produto</label>
-                <input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..." autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaCodBalanca" placeholder="Ex: 1161846, CAR SU CONG..."></div>
             <div class="stats" id="statsCodBalanca">0 itens encontrados</div>
         </div>
-        <div id="statusCodBalanca">Carregando dados...</div>
+        <div id="statusCodBalanca" class="carregando">Carregando dados...</div>
         <div id="conteudoCodBalanca"></div>
+        <div id="paginacaoCodBalanca" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 2: Estoque Virtual -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaEstoque">🔍 Buscar (Código, Nome, Fornecedor)</label>
-                <input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar (Código, Nome, Fornecedor)</label><input type="text" id="buscaEstoque" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
             <div class="stats" id="statsEstoque">0 itens exibidos</div>
         </div>
-        <div id="statusEstoque">Carregando dados...</div>
+        <div id="statusEstoque" class="carregando">Carregando dados...</div>
         <div id="conteudoEstoque"></div>
+        <div id="paginacaoEstoque" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 3: Itens por Palete (com análise de estoque) -->
     <div id="aba-paletes" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaPalete">🔍 Buscar (código, produto, fornecedor)</label>
-                <input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA" autocomplete="off">
-            </div>
-            <div>
-                <label for="mesAnoValidade">📅 Mês/Ano de validade</label>
-                <select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select>
-            </div>
-            <div>
-                <label for="agruparPor">📂 Agrupar por</label>
-                <select id="agruparPor">
-                    <option value="palete">Palete</option>
-                    <option value="data">Data Entrada</option>
-                    <option value="fornecedor">Fornecedor</option>
-                    <option value="data_fornecedor">Data Entrada + Fornecedor</option>
-                </select>
-            </div>
+            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
+            <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
+            <div><label>📂 Agrupar por</label><select id="agruparPor"><option value="palete">Palete</option><option value="data">Data Entrada</option><option value="fornecedor">Fornecedor</option><option value="data_fornecedor">Data Entrada + Fornecedor</option></select></div>
             <div class="stats" id="statsPalete">0 itens exibidos</div>
         </div>
-        <div id="statusPalete">Carregando dados...</div>
+        <div id="statusPalete" class="carregando">Carregando dados...</div>
         <div id="conteudoPalete"></div>
     </div>
 
-    <!-- ABA 4: Análise de Estoque -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
-            <div>
-                <label for="buscaAnalise">🔍 Buscar (código, produto, fornecedor)</label>
-                <input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA" autocomplete="off">
-            </div>
+            <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaAnalise" placeholder="Ex: 1180114, FRANGO, AURORA"></div>
             <div class="stats" id="statsAnalise">0 itens analisados</div>
         </div>
-        <div id="statusAnalise">Carregando dados...</div>
+        <div id="statusAnalise" class="carregando">Carregando dados...</div>
         <div id="conteudoAnalise"></div>
+        <div id="paginacaoAnalise" class="paginacao" style="display: none;"></div>
     </div>
 </div>
 
 <script>
-    // Configuração da planilha
+    // ==================== CONFIGURAÇÕES ====================
     const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
     const SHEET_CODBALANCA = 'CodBalanca';
     const SHEET_ESTOQUE = 'EstoqueVirtual';
@@ -300,22 +298,36 @@
     const URL_PALETES = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_PALETES}`;
     const URL_ATUALIZADA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ATUALIZADA}`;
 
+    // Dados globais
     let dadosCodBalanca = [];
     let dadosEstoque = [];
     let dadosPaletes = [];
     let dadosAtualizada = [];
+
+    // Mapas auxiliares
+    let mapasGlobal = {
+        fornecedor: new Map(),    // código -> fornecedor
+        estoque: new Map(),       // código -> estoque (numérico)
+        diasSemVenda: new Map()   // código -> dias sem venda
+    };
+
     let ultimaAtualizacao = new Date();
 
-    // Mapa código -> fornecedor e também estoque/dias sem venda
-    let mapaFornecedor = {};
-    let mapaEstoque = {};
-    let mapaDiasSemVenda = {};
-
     // Estados de ordenação
-    let ordenacaoCodBalanca = { coluna: 'Balanca', direcao: 'asc' };
-    let ordenacaoEstoque = { coluna: null, direcao: 'asc' };
-    let ordenacaoPaletes = { coluna: 'Codigo', direcao: 'asc' };
-    let ordenacaoAnalise = { coluna: null, direcao: 'asc' };
+    let ordenacao = {
+        codbalanca: { coluna: 'Balanca', direcao: 'asc' },
+        estoque: { coluna: null, direcao: 'asc' },
+        paletes: { coluna: 'Codigo', direcao: 'asc' },
+        analise: { coluna: null, direcao: 'asc' }
+    };
+
+    // Paginação (linhas por página)
+    const ITENS_POR_PAGINA = 100;
+    let paginacao = {
+        codbalanca: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
+        estoque: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
+        analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
+    };
 
     // Elementos DOM
     const topoDataDiv = document.getElementById('topoData');
@@ -326,33 +338,43 @@
         paletes: document.getElementById('aba-paletes'),
         analise: document.getElementById('aba-analise')
     };
-    const statusCod = document.getElementById('statusCodBalanca');
-    const conteudoCod = document.getElementById('conteudoCodBalanca');
-    const statusEst = document.getElementById('statusEstoque');
-    const conteudoEst = document.getElementById('conteudoEstoque');
-    const statusPal = document.getElementById('statusPalete');
-    const conteudoPal = document.getElementById('conteudoPalete');
-    const statusAnalise = document.getElementById('statusAnalise');
-    const conteudoAnalise = document.getElementById('conteudoAnalise');
-    const buscaCodInput = document.getElementById('buscaCodBalanca');
-    const buscaEstInput = document.getElementById('buscaEstoque');
-    const buscaPalInput = document.getElementById('buscaPalete');
-    const buscaAnaliseInput = document.getElementById('buscaAnalise');
+    const buscaCod = document.getElementById('buscaCodBalanca');
+    const buscaEst = document.getElementById('buscaEstoque');
+    const buscaPal = document.getElementById('buscaPalete');
+    const buscaAnalise = document.getElementById('buscaAnalise');
     const mesAnoSelect = document.getElementById('mesAnoValidade');
     const agruparPorSelect = document.getElementById('agruparPor');
-    const statsCodSpan = document.getElementById('statsCodBalanca');
-    const statsEstSpan = document.getElementById('statsEstoque');
-    const statsPalSpan = document.getElementById('statsPalete');
-    const statsAnaliseSpan = document.getElementById('statsAnalise');
+    const stats = {
+        cod: document.getElementById('statsCodBalanca'),
+        est: document.getElementById('statsEstoque'),
+        pal: document.getElementById('statsPalete'),
+        analise: document.getElementById('statsAnalise')
+    };
+    const statusDivs = {
+        cod: document.getElementById('statusCodBalanca'),
+        est: document.getElementById('statusEstoque'),
+        pal: document.getElementById('statusPalete'),
+        analise: document.getElementById('statusAnalise')
+    };
+    const conteudoDivs = {
+        cod: document.getElementById('conteudoCodBalanca'),
+        est: document.getElementById('conteudoEstoque'),
+        pal: document.getElementById('conteudoPalete'),
+        analise: document.getElementById('conteudoAnalise')
+    };
+    const paginacaoDivs = {
+        cod: document.getElementById('paginacaoCodBalanca'),
+        est: document.getElementById('paginacaoEstoque'),
+        analise: document.getElementById('paginacaoAnalise')
+    };
 
     // ==================== FUNÇÕES AUXILIARES ====================
-    function formatarDataBrasil(data) {
-        if (!data) return '';
-        try {
-            const d = new Date(data);
-            if (isNaN(d.getTime())) return data;
-            return d.toLocaleDateString('pt-BR');
-        } catch (e) { return data; }
+    function normalizarNumero(valor) {
+        if (valor === undefined || valor === null || valor === '') return 0;
+        if (typeof valor === 'number') return valor;
+        const str = valor.toString().replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
     }
 
     function parseDataBrasil(str) {
@@ -366,14 +388,23 @@
         return new Date(ano, mes, dia);
     }
 
+    function formatarDataBrasil(data) {
+        if (!data) return '';
+        try {
+            const d = new Date(data);
+            if (isNaN(d.getTime())) return data;
+            return d.toLocaleDateString('pt-BR');
+        } catch (e) { return data; }
+    }
+
     function ordenarDados(dados, coluna, direcao, tipo = 'auto') {
         if (!coluna) return dados;
         return [...dados].sort((a, b) => {
             let valA = a[coluna] !== undefined ? a[coluna] : '';
             let valB = b[coluna] !== undefined ? b[coluna] : '';
             if (tipo === 'numero') {
-                valA = parseFloat(valA.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                valB = parseFloat(valB.toString().replace(/\./g, '').replace(',', '.')) || 0;
+                valA = normalizarNumero(valA);
+                valB = normalizarNumero(valB);
                 return direcao === 'asc' ? valA - valB : valB - valA;
             } else {
                 valA = valA.toString().toLowerCase();
@@ -383,41 +414,126 @@
         });
     }
 
-    function atualizarTopoData() {
-        topoDataDiv.innerHTML = `📅 Última atualização dos dados: ${ultimaAtualizacao.toLocaleString('pt-BR')}`;
+    function atualizarMapasEstoque() {
+        mapasGlobal.fornecedor.clear();
+        mapasGlobal.estoque.clear();
+        mapasGlobal.diasSemVenda.clear();
+        dadosEstoque.forEach(item => {
+            const cod = item['Codigo']?.toString();
+            if (cod) {
+                mapasGlobal.fornecedor.set(cod, item['Fornecedor'] || '');
+                mapasGlobal.estoque.set(cod, normalizarNumero(item['Estoque']));
+                mapasGlobal.diasSemVenda.set(cod, parseInt(item['Dias sem venda']) || 0);
+            }
+        });
     }
 
-    // ==================== CARREGAR DADOS ====================
+    // ==================== CARREGAMENTO DOS DADOS ====================
     async function carregarAtualizada() {
         try {
             const resp = await fetch(URL_ATUALIZADA);
             if (resp.ok) {
                 dadosAtualizada = await resp.json();
                 if (dadosAtualizada.length && dadosAtualizada[0]['atualizada']) {
-                    const dataRaw = dadosAtualizada[0]['atualizada'];
-                    const parsed = parseDataBrasil(dataRaw);
+                    const parsed = parseDataBrasil(dadosAtualizada[0]['atualizada']);
                     if (parsed && !isNaN(parsed.getTime())) ultimaAtualizacao = parsed;
-                    else ultimaAtualizacao = new Date();
-                    atualizarTopoData();
                 }
             }
-        } catch (e) { console.warn('Aba Atualizada não encontrada', e); }
+        } catch (e) { console.warn('Erro ao carregar atualização:', e); }
+        atualizarTopoData();
+    }
+
+    function atualizarTopoData() {
+        topoDataDiv.innerHTML = `📅 Última atualização dos dados: ${ultimaAtualizacao.toLocaleString('pt-BR')}`;
     }
 
     async function carregarCodBalanca() {
         try {
+            statusDivs.cod.innerHTML = '<div class="carregando">⏳ Carregando dados...</div>';
             const resp = await fetch(URL_CODBALANCA);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             dadosCodBalanca = await resp.json();
             if (!dadosCodBalanca.length) throw new Error('Nenhum dado na aba CodBalanca');
+            statusDivs.cod.style.display = 'none';
             aplicarFiltroCodBalanca();
-            statusCod.style.display = 'none';
         } catch (err) {
-            statusCod.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+            statusDivs.cod.innerHTML = `<div class="erro">❌ Erro ao carregar "Código x Balança": ${err.message}</div>`;
+            conteudoDivs.cod.innerHTML = '';
         }
     }
+
+    async function carregarEstoque() {
+        try {
+            statusDivs.est.innerHTML = '<div class="carregando">⏳ Carregando dados...</div>';
+            const resp = await fetch(URL_ESTOQUE);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            dadosEstoque = await resp.json();
+            if (!dadosEstoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
+            atualizarMapasEstoque();
+            statusDivs.est.style.display = 'none';
+            aplicarFiltroEstoque();
+        } catch (err) {
+            statusDivs.est.innerHTML = `<div class="erro">❌ Erro ao carregar "Estoque Virtual": ${err.message}</div>`;
+            conteudoDivs.est.innerHTML = '';
+        }
+    }
+
+    async function carregarPaletes() {
+        try {
+            statusDivs.pal.innerHTML = '<div class="carregando">⏳ Carregando dados...</div>';
+            const resp = await fetch(URL_PALETES);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            dadosPaletes = await resp.json();
+            if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
+
+            // Se os mapas ainda não estiverem prontos, tenta carregar estoque
+            if (dadosEstoque.length === 0) {
+                await carregarEstoque();
+            } else {
+                atualizarMapasEstoque();
+            }
+
+            // Preencher meses/anos
+            const mesesAnos = new Set();
+            dadosPaletes.forEach(i => {
+                const val = i['Validade'];
+                if (val && val.includes('/')) {
+                    const p = val.split('/');
+                    if (p.length === 3) mesesAnos.add(`${p[1]}/${p[2]}`);
+                }
+            });
+            const meses = Array.from(mesesAnos).sort((a,b) => {
+                const [m1,a1] = a.split('/'), [m2,a2] = b.split('/');
+                if (a1 !== a2) return a1 - a2;
+                return m1 - m2;
+            });
+            mesAnoSelect.innerHTML = '<option value="todos">Todos os meses/anos</option>';
+            meses.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                mesAnoSelect.appendChild(opt);
+            });
+
+            statusDivs.pal.style.display = 'none';
+            aplicarFiltroPaletes();
+        } catch (err) {
+            statusDivs.pal.innerHTML = `<div class="erro">❌ Erro ao carregar "Itens por Palete": ${err.message}</div>`;
+            conteudoDivs.pal.innerHTML = '';
+        }
+    }
+
+    async function carregarAnalise() {
+        if (dadosEstoque.length === 0) {
+            await carregarEstoque();
+        }
+        statusDivs.analise.style.display = 'none';
+        aplicarFiltroAnalise();
+    }
+
+    // ==================== ABA CÓDIGO X BALANÇA ====================
     function aplicarFiltroCodBalanca() {
-        const termo = buscaCodInput.value.trim().toLowerCase();
+        const termo = buscaCod.value.trim().toLowerCase();
         let filtrados = dadosCodBalanca;
         if (termo) {
             filtrados = dadosCodBalanca.filter(i => {
@@ -426,20 +542,31 @@
                 return cod.includes(termo) || prod.includes(termo);
             });
         }
-        statsCodSpan.textContent = `${filtrados.length} itens encontrados`;
-        renderizarCodBalanca(filtrados);
+        stats.cod.textContent = `${filtrados.length} itens encontrados`;
+        paginacao.codbalanca.dadosFiltrados = filtrados;
+        paginacao.codbalanca.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+        paginacao.codbalanca.paginaAtual = 1;
+        renderizarCodBalanca();
     }
-    function renderizarCodBalanca(itens) {
-        if (!itens.length) {
-            conteudoCod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+
+    function renderizarCodBalanca() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.codbalanca;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const fim = inicio + ITENS_POR_PAGINA;
+        const paginaDados = dadosFiltrados.slice(inicio, fim);
+        const ordenados = ordenarDados(paginaDados, ordenacao.codbalanca.coluna, ordenacao.codbalanca.direcao);
+
+        if (!ordenados.length) {
+            conteudoDivs.cod.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            paginacaoDivs.cod.style.display = 'none';
             return;
         }
-        let ordenados = ordenarDados(itens, ordenacaoCodBalanca.coluna, ordenacaoCodBalanca.direcao);
-        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead><tr>`;
-        html += `<th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>`;
-        html += `<th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>`;
-        html += `<th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>`;
-        html += `</tr></thead><tbody>`;
+
+        let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead><tr>
+            <th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th>
+            <th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th>
+            <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+        </tr></thead><tbody>`;
         ordenados.forEach(i => {
             html += `<tr>
                         <td>${i['Balanca'] || ''}</td>
@@ -448,47 +575,32 @@
                      </tr>`;
         });
         html += `</tbody></table></div>`;
-        conteudoCod.innerHTML = html;
+        conteudoDivs.cod.innerHTML = html;
+
+        if (totalPaginas > 1) {
+            paginacaoDivs.cod.style.display = 'flex';
+            paginacaoDivs.cod.innerHTML = gerarBotoesPaginacao(paginacao.codbalanca.paginaAtual, totalPaginas, 'codbalanca');
+        } else {
+            paginacaoDivs.cod.style.display = 'none';
+        }
+
         document.querySelectorAll('#tabela-codbalanca th .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const col = btn.dataset.coluna;
-                if (ordenacaoCodBalanca.coluna === col) {
-                    ordenacaoCodBalanca.direcao = ordenacaoCodBalanca.direcao === 'asc' ? 'desc' : 'asc';
+                if (ordenacao.codbalanca.coluna === col) {
+                    ordenacao.codbalanca.direcao = ordenacao.codbalanca.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
-                    ordenacaoCodBalanca.coluna = col;
-                    ordenacaoCodBalanca.direcao = 'asc';
+                    ordenacao.codbalanca.coluna = col;
+                    ordenacao.codbalanca.direcao = 'asc';
                 }
-                aplicarFiltroCodBalanca();
+                renderizarCodBalanca();
             });
         });
     }
 
-    async function carregarEstoque() {
-        try {
-            const resp = await fetch(URL_ESTOQUE);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosEstoque = await resp.json();
-            if (!dadosEstoque.length) throw new Error('Nenhum dado na aba EstoqueVirtual');
-            // Preenche mapas
-            mapaFornecedor = {};
-            mapaEstoque = {};
-            mapaDiasSemVenda = {};
-            dadosEstoque.forEach(i => {
-                const cod = i['Codigo']?.toString();
-                if (cod) {
-                    mapaFornecedor[cod] = i['Fornecedor'] || '';
-                    mapaEstoque[cod] = parseFloat(i['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                    mapaDiasSemVenda[cod] = parseInt(i['Dias sem venda']) || 0;
-                }
-            });
-            aplicarFiltroEstoque();
-            statusEst.style.display = 'none';
-        } catch (err) {
-            statusEst.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
-        }
-    }
+    // ==================== ABA ESTOQUE VIRTUAL ====================
     function aplicarFiltroEstoque() {
-        const termo = buscaEstInput.value.trim().toLowerCase();
+        const termo = buscaEst.value.trim().toLowerCase();
         let filtrados = dadosEstoque;
         if (termo) {
             filtrados = dadosEstoque.filter(i => {
@@ -498,15 +610,26 @@
                 return cod.includes(termo) || nome.includes(termo) || forn.includes(termo);
             });
         }
-        statsEstSpan.textContent = `${filtrados.length} itens exibidos`;
-        renderizarEstoque(filtrados);
+        stats.est.textContent = `${filtrados.length} itens exibidos`;
+        paginacao.estoque.dadosFiltrados = filtrados;
+        paginacao.estoque.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+        paginacao.estoque.paginaAtual = 1;
+        renderizarEstoque();
     }
-    function renderizarEstoque(itens) {
-        if (!itens.length) {
-            conteudoEst.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+
+    function renderizarEstoque() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.estoque;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const fim = inicio + ITENS_POR_PAGINA;
+        const paginaDados = dadosFiltrados.slice(inicio, fim);
+        const ordenados = ordenarDados(paginaDados, ordenacao.estoque.coluna, ordenacao.estoque.direcao);
+
+        if (!ordenados.length) {
+            conteudoDivs.est.innerHTML = '<div class="vazio">Nenhum item corresponde à busca.</div>';
+            paginacaoDivs.est.style.display = 'none';
             return;
         }
-        let ordenados = ordenarDados(itens, ordenacaoEstoque.coluna, ordenacaoEstoque.direcao);
+
         let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead><tr>`;
         const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Classe de Produto', 'Fornecedor'];
         colunas.forEach(col => {
@@ -526,71 +649,32 @@
                      </tr>`;
         });
         html += `</tbody></table></div>`;
-        conteudoEst.innerHTML = html;
+        conteudoDivs.est.innerHTML = html;
+
+        if (totalPaginas > 1) {
+            paginacaoDivs.est.style.display = 'flex';
+            paginacaoDivs.est.innerHTML = gerarBotoesPaginacao(paginacao.estoque.paginaAtual, totalPaginas, 'estoque');
+        } else {
+            paginacaoDivs.est.style.display = 'none';
+        }
+
         document.querySelectorAll('#tabela-estoque th .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const col = btn.dataset.coluna;
-                if (ordenacaoEstoque.coluna === col) {
-                    ordenacaoEstoque.direcao = ordenacaoEstoque.direcao === 'asc' ? 'desc' : 'asc';
+                if (ordenacao.estoque.coluna === col) {
+                    ordenacao.estoque.direcao = ordenacao.estoque.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
-                    ordenacaoEstoque.coluna = col;
-                    ordenacaoEstoque.direcao = 'asc';
+                    ordenacao.estoque.coluna = col;
+                    ordenacao.estoque.direcao = 'asc';
                 }
-                aplicarFiltroEstoque();
+                renderizarEstoque();
             });
         });
     }
 
-    async function carregarPaletes() {
-        try {
-            const resp = await fetch(URL_PALETES);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosPaletes = await resp.json();
-            if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
-
-            if (!dadosEstoque.length) {
-                const respEst = await fetch(URL_ESTOQUE);
-                if (respEst.ok) dadosEstoque = await respEst.json();
-            }
-            // Garantir mapas
-            dadosEstoque.forEach(i => {
-                const cod = i['Codigo']?.toString();
-                if (cod) {
-                    mapaFornecedor[cod] = i['Fornecedor'] || '';
-                    mapaEstoque[cod] = parseFloat(i['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
-                    mapaDiasSemVenda[cod] = parseInt(i['Dias sem venda']) || 0;
-                }
-            });
-
-            const mesesAnos = new Set();
-            dadosPaletes.forEach(i => {
-                const val = i['Validade'];
-                if (val && val.includes('/')) {
-                    const p = val.split('/');
-                    if (p.length === 3) mesesAnos.add(`${p[1]}/${p[2]}`);
-                }
-            });
-            const meses = Array.from(mesesAnos).sort((a,b) => {
-                const [m1,a1] = a.split('/'), [m2,a2] = b.split('/');
-                if (a1 !== a2) return a1 - a2;
-                return m1 - m2;
-            });
-            meses.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                mesAnoSelect.appendChild(opt);
-            });
-
-            aplicarFiltroPaletes();
-            statusPal.style.display = 'none';
-        } catch (err) {
-            statusPal.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
-        }
-    }
-
+    // ==================== ABA ITENS POR PALETE ====================
     function aplicarFiltroPaletes() {
-        const termo = buscaPalInput.value.trim().toLowerCase();
+        const termo = buscaPal.value.trim().toLowerCase();
         const mesAno = mesAnoSelect.value;
 
         let filtrados = dadosPaletes.filter(i => {
@@ -605,22 +689,22 @@
             if (termo) {
                 const cod = (i['Codigo'] || '').toString().toLowerCase();
                 const prod = (i['Produto'] || '').toLowerCase();
-                const forn = (mapaFornecedor[i['Codigo']] || '').toLowerCase();
+                const forn = (mapasGlobal.fornecedor.get(i['Codigo']?.toString()) || '').toLowerCase();
                 return cod.includes(termo) || prod.includes(termo) || forn.includes(termo);
             }
             return true;
         });
 
-        filtrados = ordenarDados(filtrados, ordenacaoPaletes.coluna, ordenacaoPaletes.direcao);
-        statsPalSpan.textContent = `${filtrados.length} itens exibidos`;
-        renderizarPaletes(filtrados);
+        stats.pal.textContent = `${filtrados.length} itens exibidos`;
+        renderizarPaletes(ordenarDados(filtrados, ordenacao.paletes.coluna, ordenacao.paletes.direcao));
     }
 
     function renderizarPaletes(itens) {
         if (!itens.length) {
-            conteudoPal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
+            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
             return;
         }
+
         const agrupar = agruparPorSelect.value;
         if (agrupar === 'data_fornecedor') {
             const gruposData = {};
@@ -641,7 +725,7 @@
                 const itensData = gruposData[data];
                 const gruposForn = {};
                 for (const item of itensData) {
-                    const forn = mapaFornecedor[item['Codigo']] || 'Não informado';
+                    const forn = mapasGlobal.fornecedor.get(item['Codigo']?.toString()) || 'Não informado';
                     if (!gruposForn[forn]) gruposForn[forn] = [];
                     gruposForn[forn].push(item);
                 }
@@ -657,19 +741,18 @@
                                 <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
                                 <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
                                 <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                                <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
+                                <th>Fornecedor</th>
                                 <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                               </tr></thead><tbody>`;
+                            </tr></thead><tbody>`;
                     for (const item of itensForn) {
                         const cod = item['Codigo']?.toString();
-                        const estoqueAtual = mapaEstoque[cod] || 0;
-                        const diasSemVenda = mapaDiasSemVenda[cod] || 0;
-                        let sugestao = '';
-                        let classe = '';
+                        const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                        const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                        let sugestao = '', classe = '';
                         if (estoqueAtual > 0 && diasSemVenda > 60) {
                             sugestao = '⚠️ Baixo giro';
                             classe = 'negativo';
-                        } else if (parseFloat(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                        } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
                             sugestao = '📦 Excesso de entrada';
                             classe = 'atencao';
                         } else if (estoqueAtual === 0 && diasSemVenda > 30) {
@@ -678,7 +761,7 @@
                         } else {
                             sugestao = 'OK';
                         }
-                        const fornItem = mapaFornecedor[cod] || '';
+                        const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                         html += `<tr class="${classe}">
                                     <td class="codigo">${item['Codigo'] || ''}</td>
                                     <td>${item['Produto'] || ''}</td>
@@ -695,7 +778,7 @@
                 }
                 html += `</div>`;
             }
-            conteudoPal.innerHTML = html;
+            conteudoDivs.pal.innerHTML = html;
             attachOrdenacaoPaletes();
             return;
         }
@@ -706,7 +789,7 @@
             let chave;
             if (agrupar === 'palete') chave = item['Palete'] || 'SEM PALETE';
             else if (agrupar === 'data') chave = item['Data Entrada'] || 'Sem data';
-            else chave = mapaFornecedor[item['Codigo']] || 'Não informado';
+            else chave = mapasGlobal.fornecedor.get(item['Codigo']?.toString()) || 'Não informado';
             if (!grupos[chave]) grupos[chave] = [];
             grupos[chave].push(item);
         }
@@ -723,7 +806,7 @@
         } else if (agrupar === 'palete') {
             chavesOrdenadas.sort((a,b) => a.localeCompare(b, undefined, { numeric: true }));
         } else {
-            chavesOrdenadas.sort((a,b) => a.localeCompare(b));
+            chavesOrdenadas.sort();
         }
 
         let html = '';
@@ -737,19 +820,18 @@
                         <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
                         <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
                         <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                        <th>Fornecedor <span class="ordenar-btn" data-coluna="Fornecedor">⇅</span></th>
+                        <th>Fornecedor</th>
                         <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
-                       </tr></thead><tbody>`;
+                    </tr></thead><tbody>`;
             for (const item of itensGrupo) {
                 const cod = item['Codigo']?.toString();
-                const estoqueAtual = mapaEstoque[cod] || 0;
-                const diasSemVenda = mapaDiasSemVenda[cod] || 0;
-                let sugestao = '';
-                let classe = '';
+                const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                let sugestao = '', classe = '';
                 if (estoqueAtual > 0 && diasSemVenda > 60) {
                     sugestao = '⚠️ Baixo giro';
                     classe = 'negativo';
-                } else if (parseFloat(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
                     sugestao = '📦 Excesso de entrada';
                     classe = 'atencao';
                 } else if (estoqueAtual === 0 && diasSemVenda > 30) {
@@ -758,7 +840,7 @@
                 } else {
                     sugestao = 'OK';
                 }
-                const fornItem = mapaFornecedor[cod] || '';
+                const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                 html += `<tr class="${classe}">
                             <td class="codigo">${item['Codigo'] || ''}</td>
                             <td>${item['Produto'] || ''}</td>
@@ -773,7 +855,7 @@
             }
             html += `</tbody></table></div></div>`;
         }
-        conteudoPal.innerHTML = html;
+        conteudoDivs.pal.innerHTML = html;
         attachOrdenacaoPaletes();
     }
 
@@ -781,50 +863,27 @@
         document.querySelectorAll('#conteudoPalete .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const coluna = btn.dataset.coluna;
-                if (ordenacaoPaletes.coluna === coluna) {
-                    ordenacaoPaletes.direcao = ordenacaoPaletes.direcao === 'asc' ? 'desc' : 'asc';
+                if (ordenacao.paletes.coluna === coluna) {
+                    ordenacao.paletes.direcao = ordenacao.paletes.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
-                    ordenacaoPaletes.coluna = coluna;
-                    ordenacaoPaletes.direcao = 'asc';
+                    ordenacao.paletes.coluna = coluna;
+                    ordenacao.paletes.direcao = 'asc';
                 }
                 aplicarFiltroPaletes();
             });
         });
     }
 
-    // ==================== ABA 4: ANÁLISE DE ESTOQUE ====================
-    function carregarAnalise() {
-        if (!dadosEstoque.length) {
-            carregarEstoque().then(() => {
-                aplicarFiltroAnalise();
-                statusAnalise.style.display = 'none';
-            });
-        } else {
-            aplicarFiltroAnalise();
-            statusAnalise.style.display = 'none';
-        }
-    }
-
+    // ==================== ABA ANÁLISE DE ESTOQUE ====================
     function aplicarFiltroAnalise() {
-        const termo = buscaAnaliseInput.value.trim().toLowerCase();
+        const termo = buscaAnalise.value.trim().toLowerCase();
         const hoje = new Date();
-
-        function parseDataBrasil(str) {
-            if (!str) return null;
-            const partes = str.split('/');
-            if (partes.length !== 3) return null;
-            const dia = parseInt(partes[0], 10);
-            const mes = parseInt(partes[1], 10) - 1;
-            const ano = parseInt(partes[2], 10);
-            if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return null;
-            return new Date(ano, mes, dia);
-        }
 
         const analise = [];
         for (const est of dadosEstoque) {
             const cod = est['Codigo']?.toString();
             if (!cod) continue;
-            const estoque = parseFloat(est['Estoque']?.toString().replace(/\./g, '').replace(',', '.')) || 0;
+            const estoque = normalizarNumero(est['Estoque']);
             const diasSemVenda = parseInt(est['Dias sem venda']) || 0;
             const ultimaCompraStr = est['Última Compra'] || '';
             const ultimaCompraDate = parseDataBrasil(ultimaCompraStr);
@@ -862,22 +921,33 @@
             });
         }
 
-        // Ordenação (se houver coluna selecionada)
-        if (ordenacaoAnalise.coluna) {
-            filtrados = ordenarDados(filtrados, ordenacaoAnalise.coluna, ordenacaoAnalise.direcao);
-        } else {
-            // Default: itens com sugestão primeiro
+        // Ordenação padrão se nenhuma coluna estiver selecionada
+        if (!ordenacao.analise.coluna) {
             filtrados.sort((a, b) => {
                 if (a.sugestao !== 'OK' && b.sugestao === 'OK') return -1;
                 if (a.sugestao === 'OK' && b.sugestao !== 'OK') return 1;
                 return b.diasSemVenda - a.diasSemVenda;
             });
+        } else {
+            filtrados = ordenarDados(filtrados, ordenacao.analise.coluna, ordenacao.analise.direcao);
         }
 
-        statsAnaliseSpan.textContent = `${filtrados.length} itens analisados`;
+        stats.analise.textContent = `${filtrados.length} itens analisados`;
+        paginacao.analise.dadosFiltrados = filtrados;
+        paginacao.analise.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+        paginacao.analise.paginaAtual = 1;
+        renderizarAnalise();
+    }
 
-        if (!filtrados.length) {
-            conteudoAnalise.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
+    function renderizarAnalise() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.analise;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const fim = inicio + ITENS_POR_PAGINA;
+        const paginaDados = dadosFiltrados.slice(inicio, fim);
+
+        if (!paginaDados.length) {
+            conteudoDivs.analise.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
+            paginacaoDivs.analise.style.display = 'none';
             return;
         }
 
@@ -889,64 +959,101 @@
             <th>Dias sem venda <span class="ordenar-btn" data-coluna="diasSemVenda">⇅</span></th>
             <th>Última Compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th>
             <th>Sugestão</th><th>Detalhe</th>
-         </tr></thead><tbody>`;
-        for (const a of filtrados) {
+        </tr></thead><tbody>`;
+        for (const a of paginaDados) {
             let classe = a.sugestao !== 'OK' ? 'negativo' : '';
             html += `<tr class="${classe}">
-                         <td>${a.codigo}</td>
-                         <td>${a.nome}</td>
-                         <td>${a.fornecedor}</td>
-                         <td class="qtde">${a.estoque}</td>
-                         <td class="qtde">${a.diasSemVenda}</td>
-                         <td>${a.ultimaCompra}</td>
-                         <td>${a.sugestao}</td>
-                         <td>${a.motivo}</td>
-                       </tr>`;
+                        <td>${a.codigo}</td>
+                        <td>${a.nome}</td>
+                        <td>${a.fornecedor}</td>
+                        <td class="qtde">${a.estoque}</td>
+                        <td class="qtde">${a.diasSemVenda}</td>
+                        <td>${a.ultimaCompra}</td>
+                        <td>${a.sugestao}</td>
+                        <td>${a.motivo}</td>
+                     </tr>`;
         }
         html += `</tbody></table></div>`;
-        conteudoAnalise.innerHTML = html;
+        conteudoDivs.analise.innerHTML = html;
+
+        if (totalPaginas > 1) {
+            paginacaoDivs.analise.style.display = 'flex';
+            paginacaoDivs.analise.innerHTML = gerarBotoesPaginacao(paginacao.analise.paginaAtual, totalPaginas, 'analise');
+        } else {
+            paginacaoDivs.analise.style.display = 'none';
+        }
 
         document.querySelectorAll('#tabela-analise th .ordenar-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const col = btn.dataset.coluna;
-                if (ordenacaoAnalise.coluna === col) {
-                    ordenacaoAnalise.direcao = ordenacaoAnalise.direcao === 'asc' ? 'desc' : 'asc';
+                if (ordenacao.analise.coluna === col) {
+                    ordenacao.analise.direcao = ordenacao.analise.direcao === 'asc' ? 'desc' : 'asc';
                 } else {
-                    ordenacaoAnalise.coluna = col;
-                    ordenacaoAnalise.direcao = 'asc';
+                    ordenacao.analise.coluna = col;
+                    ordenacao.analise.direcao = 'asc';
                 }
                 aplicarFiltroAnalise();
             });
         });
     }
 
-    // ==================== EVENTOS DE ABA ====================
+    // ==================== PAGINAÇÃO ====================
+    function gerarBotoesPaginacao(paginaAtual, totalPaginas, aba) {
+        let botoes = '';
+        for (let i = 1; i <= totalPaginas; i++) {
+            if (i === 1 || i === totalPaginas || (i >= paginaAtual - 2 && i <= paginaAtual + 2)) {
+                botoes += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina="${i}" data-aba="${aba}">${i}</button>`;
+            } else if (i === paginaAtual - 3 || i === paginaAtual + 3) {
+                botoes += `<span>...</span>`;
+            }
+        }
+        return botoes;
+    }
+
+    function mudarPagina(aba, pagina) {
+        if (!paginacao[aba]) return;
+        paginacao[aba].paginaAtual = pagina;
+        if (aba === 'codbalanca') renderizarCodBalanca();
+        else if (aba === 'estoque') renderizarEstoque();
+        else if (aba === 'analise') renderizarAnalise();
+    }
+
+    // ==================== EVENTOS ====================
     function trocarAba(abaId) {
         for (const [id, el] of Object.entries(conteudos)) {
-            if (id === abaId) el.classList.add('ativo');
-            else el.classList.remove('ativo');
+            el.classList.toggle('ativo', id === abaId);
         }
         abaBtns.forEach(btn => {
-            if (btn.dataset.aba === abaId) btn.classList.add('ativo');
-            else btn.classList.remove('ativo');
+            btn.classList.toggle('ativo', btn.dataset.aba === abaId);
         });
-        if (abaId === 'analise') carregarAnalise();
+        if (abaId === 'analise' && dadosEstoque.length === 0) carregarAnalise();
     }
-    abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
 
-    buscaCodInput.addEventListener('input', aplicarFiltroCodBalanca);
-    buscaEstInput.addEventListener('input', aplicarFiltroEstoque);
-    buscaPalInput.addEventListener('input', aplicarFiltroPaletes);
-    buscaAnaliseInput.addEventListener('input', aplicarFiltroAnalise);
+    abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
+    buscaCod.addEventListener('input', aplicarFiltroCodBalanca);
+    buscaEst.addEventListener('input', aplicarFiltroEstoque);
+    buscaPal.addEventListener('input', aplicarFiltroPaletes);
+    buscaAnalise.addEventListener('input', aplicarFiltroAnalise);
     mesAnoSelect.addEventListener('change', aplicarFiltroPaletes);
     agruparPorSelect.addEventListener('change', aplicarFiltroPaletes);
 
-    // Inicialização
-    Promise.all([carregarAtualizada(), carregarCodBalanca(), carregarEstoque(), carregarPaletes()]).then(() => {
-        if (!dadosAtualizada.length || !dadosAtualizada[0]['atualizada']) {
-            ultimaAtualizacao = new Date();
-            atualizarTopoData();
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('pag-btn')) {
+            const pagina = parseInt(e.target.dataset.pagina);
+            const aba = e.target.dataset.aba;
+            if (!isNaN(pagina) && aba) mudarPagina(aba, pagina);
         }
+    });
+
+    // ==================== INICIALIZAÇÃO ====================
+    Promise.allSettled([
+        carregarAtualizada(),
+        carregarCodBalanca(),
+        carregarEstoque(),
+        carregarPaletes()
+    ]).then(() => {
+        // Se alguma falhou, mas as outras carregaram, tudo bem
+        console.log('Carregamento concluído');
     });
 </script>
 </body>
