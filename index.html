@@ -288,7 +288,7 @@
             background: #e2e8f0;
         }
 
-        /* Modal simples para colunas */
+        /* Modal para colunas */
         .modal-colunas {
             display: none;
             position: fixed;
@@ -401,7 +401,13 @@
             <div class="filtros-top">
                 <div><label>🔍 Buscar (código, produto, fornecedor)</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA, AURORA"></div>
                 <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
-                <div><label>📂 Agrupar por</label><select id="agruparPor"><option value="palete">Palete</option><option value="data">Data Entrada</option><option value="fornecedor">Fornecedor</option><option value="data_fornecedor">Data Entrada + Fornecedor</option></select></div>
+                <div><label>📂 Agrupar por</label><select id="agruparPor">
+                    <option value="palete">Palete</option>
+                    <option value="data">Data Entrada</option>
+                    <option value="fornecedor">Fornecedor</option>
+                    <option value="data_fornecedor">Data Entrada + Fornecedor</option>
+                    <option value="nenhum">Sem agrupamento</option>
+                </select></div>
                 <div class="stats" id="statsPalete">0 itens exibidos</div>
             </div>
             <div class="filtros-botoes">
@@ -430,7 +436,7 @@
     </div>
 </div>
 
-<!-- Modal para configuração de colunas (apenas análise) -->
+<!-- Modal para configuração de colunas (análise) -->
 <div id="modalColunas" class="modal-colunas">
     <div class="modal-conteudo">
         <h3>Selecione as colunas</h3>
@@ -466,6 +472,8 @@
         diasSemVenda: new Map()
     };
 
+    let ultimaEntradaMap = new Map(); // código -> última data de entrada (string)
+
     let ultimaAtualizacao = new Date();
 
     let ordenacao = {
@@ -484,7 +492,7 @@
 
     // Modos de visualização por aba
     let visao = {
-        codbalanca: 'tabela',   // 'tabela' ou 'cards'
+        codbalanca: 'tabela',
         estoque: 'tabela',
         paletes: 'tabela',
         analise: 'tabela'
@@ -684,9 +692,22 @@
             dadosPaletes = await resp.json();
             if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
 
+            // Preencher mapa de última entrada
+            ultimaEntradaMap.clear();
+            for (const item of dadosPaletes) {
+                const cod = item['Codigo']?.toString();
+                if (cod && item['Data Entrada']) {
+                    const dataAtual = ultimaEntradaMap.get(cod);
+                    if (!dataAtual || item['Data Entrada'] > dataAtual) {
+                        ultimaEntradaMap.set(cod, item['Data Entrada']);
+                    }
+                }
+            }
+
             if (dadosEstoque.length === 0) await carregarEstoque();
             else atualizarMapasEstoque();
 
+            // Preencher meses/anos
             const mesesAnos = new Set();
             dadosPaletes.forEach(i => {
                 const val = i['Validade'];
@@ -802,9 +823,9 @@
                 + `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                            <td>${i['Balanca'] || ''}</td>
-                            <td>${i['Cod'] || ''}</td>
-                            <td>${i['Produto'] || ''}</td>
+                             <td>${i['Balanca'] || ''}</td>
+                             <td>${i['Cod'] || ''}</td>
+                             <td>${i['Produto'] || ''}</td>
                          </tr>`;
             });
             html += `</tbody></table></div>`;
@@ -823,7 +844,7 @@
                 });
             });
         } else {
-            // Modo cards
+            // Cards
             let html = `<div class="cards-view">`;
             for (const item of ordenados) {
                 html += `<div class="card-item">
@@ -885,13 +906,13 @@
             html += `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                            <td>${i['Codigo'] || ''}</td>
-                            <td>${i['Nome'] || ''}</td>
-                            <td class="qtde">${i['Estoque'] || '0'}</td>
-                            <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                            <td>${i['Última venda'] || ''}</td>
-                            <td>${i['Última Compra'] || ''}</td>
-                            <td>${i['Fornecedor'] || ''}</td>
+                             <td>${i['Codigo'] || ''}</td>
+                             <td>${i['Nome'] || ''}</td>
+                             <td class="qtde">${i['Estoque'] || '0'}</td>
+                             <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                             <td>${i['Última venda'] || ''}</td>
+                             <td>${i['Última Compra'] || ''}</td>
+                             <td>${i['Fornecedor'] || ''}</td>
                          </tr>`;
             });
             html += `</tbody></table></div>`;
@@ -970,11 +991,177 @@
 
     function renderizarPaletes(itens) {
         if (!itens.length) {
-            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde.</div>';
+            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
             return;
         }
 
         const agrupar = agruparPorSelect.value;
+
+        // Função auxiliar para sugestão estendida
+        function obterSugestao(item, estoqueAtual, diasSemVenda) {
+            const cod = item['Codigo']?.toString();
+            const validadeStr = item['Validade'] || '';
+            const qtdeEsperada = normalizarNumero(item['Qtde Esperada']);
+
+            // 1. Validade próxima (<= 30 dias)
+            if (validadeStr) {
+                const dataVal = parseDataBrasil(validadeStr);
+                if (dataVal) {
+                    const diasParaValidade = Math.ceil((dataVal - new Date()) / (1000 * 3600 * 24));
+                    if (diasParaValidade >= 0 && diasParaValidade <= 30) {
+                        return { sugestao: '⚠️ Vencimento próximo', classe: 'atencao' };
+                    }
+                }
+            }
+
+            // 2. Baixo giro
+            if (estoqueAtual > 0 && diasSemVenda > 60) {
+                return { sugestao: '⚠️ Baixo giro', classe: 'negativo' };
+            }
+            // 3. Excesso de entrada
+            if (qtdeEsperada > estoqueAtual * 1.2 && estoqueAtual > 0) {
+                return { sugestao: '📦 Excesso de entrada', classe: 'atencao' };
+            }
+            // 4. Sem estoque mas com venda recente
+            if (estoqueAtual === 0 && diasSemVenda > 30) {
+                return { sugestao: '🔄 Prioridade de venda', classe: 'positivo' };
+            }
+            // 5. Última entrada antiga (> 90 dias) e estoque baixo
+            const ultimaEntrada = ultimaEntradaMap.get(cod);
+            if (ultimaEntrada) {
+                const dataEntrada = parseDataBrasil(ultimaEntrada);
+                if (dataEntrada) {
+                    const diasUltimaEntrada = Math.ceil((new Date() - dataEntrada) / (1000 * 3600 * 24));
+                    if (diasUltimaEntrada > 90 && estoqueAtual < qtdeEsperada * 0.5) {
+                        return { sugestao: '🔄 Reposição necessária', classe: 'atencao' };
+                    }
+                }
+            }
+            return { sugestao: 'OK', classe: '' };
+        }
+
+        // ==================== SEM AGRUPAMENTO ====================
+        if (agrupar === 'nenhum') {
+            const ITENS_POR_PAGINA_PALETES = 100;
+            let paginaAtual = 1;
+            let totalPaginas = Math.ceil(itens.length / ITENS_POR_PAGINA_PALETES);
+
+            function renderizarPagina() {
+                const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA_PALETES;
+                const fim = inicio + ITENS_POR_PAGINA_PALETES;
+                const paginaDados = itens.slice(inicio, fim);
+
+                if (visao.paletes === 'tabela') {
+                    let html = `<div class="tabela-wrapper"><table id="tabela-paletes-nenhum"><thead>`;
+                    html += `<th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
+                             <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
+                             <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
+                             <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
+                             <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
+                             <th>Fornecedor</th>
+                             <th>Estoque Atual</th>
+                             <th>Dias s/ Venda</th>
+                             <th>Última Entrada</th>
+                             <th>Sugestão</th>
+                             </thead><tbody>`;
+                    for (const item of paginaDados) {
+                        const cod = item['Codigo']?.toString();
+                        const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                        const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                        const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                        const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
+                        const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                        html += `<tr class="${classe}">
+                                    <td class="codigo">${item['Codigo'] || ''}</td>
+                                    <td>${item['Produto'] || ''}</td>
+                                    <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
+                                    <td>${item['Validade'] || ''}</td>
+                                    <td>${item['Data Entrada'] || ''}</td>
+                                    <td>${fornItem}</td>
+                                    <td class="qtde">${estoqueAtual}</td>
+                                    <td class="qtde">${diasSemVenda}</td>
+                                    <td>${ultimaEntrada}</td>
+                                    <td>${sugestao}</td>
+                                 </tr>`;
+                    }
+                    html += `</tbody></table></div>`;
+                    conteudoDivs.pal.innerHTML = html;
+
+                    // Adicionar paginação
+                    if (totalPaginas > 1) {
+                        let pagHtml = '<div class="paginacao">';
+                        for (let i = 1; i <= totalPaginas; i++) {
+                            pagHtml += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina-paletes="${i}">${i}</button>`;
+                        }
+                        pagHtml += '</div>';
+                        conteudoDivs.pal.innerHTML += pagHtml;
+                    }
+
+                    // Ordenação
+                    document.querySelectorAll('#tabela-paletes-nenhum th .ordenar-btn').forEach(btn => {
+                        btn.addEventListener('click', e => {
+                            const coluna = btn.dataset.coluna;
+                            const tipo = getTipoColuna('paletes', coluna);
+                            if (ordenacao.paletes.coluna === coluna) {
+                                ordenacao.paletes.direcao = ordenacao.paletes.direcao === 'asc' ? 'desc' : 'asc';
+                            } else {
+                                ordenacao.paletes.coluna = coluna;
+                                ordenacao.paletes.direcao = 'asc';
+                            }
+                            const ordenados = ordenarDados(itens, ordenacao.paletes.coluna, ordenacao.paletes.direcao, tipo);
+                            renderizarPaletes(ordenados);
+                        });
+                    });
+                } else {
+                    // Cards
+                    let html = `<div class="cards-view">`;
+                    for (const item of paginaDados) {
+                        const cod = item['Codigo']?.toString();
+                        const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+                        const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+                        const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                        const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
+                        const fornItem = mapasGlobal.fornecedor.get(cod) || '';
+                        html += `<div class="card-item ${classe}">
+                                    <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
+                                    <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
+                                    <div class="card-linha"><span class="label">Qtde:</span><span class="valor">${item['Qtde Esperada'] || '0'}</span></div>
+                                    <div class="card-linha"><span class="label">Validade:</span><span class="valor">${item['Validade'] || ''}</span></div>
+                                    <div class="card-linha"><span class="label">Data Entrada:</span><span class="valor">${item['Data Entrada'] || ''}</span></div>
+                                    <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
+                                    <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
+                                    <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
+                                    <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${ultimaEntrada}</span></div>
+                                    <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
+                                  </div>`;
+                    }
+                    html += `</div>`;
+                    conteudoDivs.pal.innerHTML = html;
+
+                    if (totalPaginas > 1) {
+                        let pagHtml = '<div class="paginacao">';
+                        for (let i = 1; i <= totalPaginas; i++) {
+                            pagHtml += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina-paletes="${i}">${i}</button>`;
+                        }
+                        pagHtml += '</div>';
+                        conteudoDivs.pal.innerHTML += pagHtml;
+                    }
+                }
+
+                // Eventos de paginação
+                document.querySelectorAll('[data-pagina-paletes]').forEach(btn => {
+                    btn.addEventListener('click', e => {
+                        paginaAtual = parseInt(e.target.dataset.paginaPaletes);
+                        renderizarPagina();
+                    });
+                });
+            }
+
+            renderizarPagina();
+            return;
+        }
+
+        // ==================== AGRUPAMENTOS EXISTENTES ====================
         if (agrupar === 'data_fornecedor') {
             const gruposData = {};
             for (const item of itens) {
@@ -1012,25 +1199,17 @@
                                     <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
                                     <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                                     <th>Fornecedor</th>
-                                    <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+                                    <th>Estoque Atual</th>
+                                    <th>Dias s/ Venda</th>
+                                    <th>Última Entrada</th>
+                                    <th>Sugestão</th>
                                   </tr></thead><tbody>`;
                         for (const item of itensForn) {
                             const cod = item['Codigo']?.toString();
                             const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
                             const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                            let sugestao = '', classe = '';
-                            if (estoqueAtual > 0 && diasSemVenda > 60) {
-                                sugestao = '⚠️ Baixo giro';
-                                classe = 'negativo';
-                            } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                                sugestao = '📦 Excesso de entrada';
-                                classe = 'atencao';
-                            } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                                sugestao = '🔄 Prioridade de venda';
-                                classe = 'positivo';
-                            } else {
-                                sugestao = 'OK';
-                            }
+                            const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                            const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
                             const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                             html += `<tr class="${classe}">
                                         <td class="codigo">${item['Codigo'] || ''}</td>
@@ -1041,30 +1220,19 @@
                                         <td>${fornItem}</td>
                                         <td class="qtde">${estoqueAtual}</td>
                                         <td class="qtde">${diasSemVenda}</td>
+                                        <td>${ultimaEntrada}</td>
                                         <td>${sugestao}</td>
                                       </tr>`;
                         }
                         html += `</tbody></table></div>`;
                     } else {
-                        // Cards
                         html += `<div class="cards-view">`;
                         for (const item of itensForn) {
                             const cod = item['Codigo']?.toString();
                             const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
                             const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                            let sugestao = '', classe = '';
-                            if (estoqueAtual > 0 && diasSemVenda > 60) {
-                                sugestao = '⚠️ Baixo giro';
-                                classe = 'negativo';
-                            } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                                sugestao = '📦 Excesso de entrada';
-                                classe = 'atencao';
-                            } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                                sugestao = '🔄 Prioridade de venda';
-                                classe = 'positivo';
-                            } else {
-                                sugestao = 'OK';
-                            }
+                            const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                            const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
                             const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                             html += `<div class="card-item ${classe}">
                                         <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
@@ -1075,6 +1243,7 @@
                                         <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
                                         <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
                                         <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
+                                        <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${ultimaEntrada}</span></div>
                                         <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
                                       </div>`;
                         }
@@ -1088,7 +1257,7 @@
             return;
         }
 
-        // Agrupamento simples (palete, data ou fornecedor)
+        // Agrupamentos simples: palete, data, fornecedor
         const grupos = {};
         for (const item of itens) {
             let chave;
@@ -1127,25 +1296,17 @@
                             <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
                             <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
                             <th>Fornecedor</th>
-                            <th>Estoque Atual</th><th>Dias s/ Venda</th><th>Sugestão</th>
+                            <th>Estoque Atual</th>
+                            <th>Dias s/ Venda</th>
+                            <th>Última Entrada</th>
+                            <th>Sugestão</th>
                           </tr></thead><tbody>`;
                 for (const item of itensGrupo) {
                     const cod = item['Codigo']?.toString();
                     const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
                     const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    let sugestao = '', classe = '';
-                    if (estoqueAtual > 0 && diasSemVenda > 60) {
-                        sugestao = '⚠️ Baixo giro';
-                        classe = 'negativo';
-                    } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                        sugestao = '📦 Excesso de entrada';
-                        classe = 'atencao';
-                    } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                        sugestao = '🔄 Prioridade de venda';
-                        classe = 'positivo';
-                    } else {
-                        sugestao = 'OK';
-                    }
+                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
                     const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                     html += `<tr class="${classe}">
                                 <td class="codigo">${item['Codigo'] || ''}</td>
@@ -1156,30 +1317,19 @@
                                 <td>${fornItem}</td>
                                 <td class="qtde">${estoqueAtual}</td>
                                 <td class="qtde">${diasSemVenda}</td>
+                                <td>${ultimaEntrada}</td>
                                 <td>${sugestao}</td>
                               </tr>`;
                 }
                 html += `</tbody></table></div>`;
             } else {
-                // Cards
                 html += `<div class="cards-view">`;
                 for (const item of itensGrupo) {
                     const cod = item['Codigo']?.toString();
                     const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
                     const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    let sugestao = '', classe = '';
-                    if (estoqueAtual > 0 && diasSemVenda > 60) {
-                        sugestao = '⚠️ Baixo giro';
-                        classe = 'negativo';
-                    } else if (normalizarNumero(item['Qtde Esperada']) > estoqueAtual * 1.2 && estoqueAtual > 0) {
-                        sugestao = '📦 Excesso de entrada';
-                        classe = 'atencao';
-                    } else if (estoqueAtual === 0 && diasSemVenda > 30) {
-                        sugestao = '🔄 Prioridade de venda';
-                        classe = 'positivo';
-                    } else {
-                        sugestao = 'OK';
-                    }
+                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
+                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
                     const fornItem = mapasGlobal.fornecedor.get(cod) || '';
                     html += `<div class="card-item ${classe}">
                                 <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
@@ -1190,6 +1340,7 @@
                                 <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
                                 <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
                                 <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
+                                <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${ultimaEntrada}</span></div>
                                 <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
                               </div>`;
                 }
