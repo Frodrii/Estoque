@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>📊 Sistema de Gestão de Setor</title>
     <style>
+        /* (Manter todos os estilos originais, apenas adicionar se necessário) */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
@@ -228,7 +229,6 @@
         .vazio { color: #475569; background: #f1f5f9; font-style: italic; }
         .carregando { color: #2563eb; background: #eff6ff; }
 
-        /* Cards */
         .cards-view {
             display: flex;
             flex-direction: column;
@@ -272,7 +272,6 @@
             color: #2563eb;
         }
 
-        /* Paginação */
         .paginacao {
             display: flex;
             justify-content: center;
@@ -300,7 +299,6 @@
             background: #e2e8f0;
         }
 
-        /* Modal para colunas */
         .modal-colunas {
             display: none;
             position: fixed;
@@ -371,11 +369,11 @@
     <div class="abas">
         <button class="aba-btn ativo" data-aba="codbalanca">⚖️ Código x Balança</button>
         <button class="aba-btn" data-aba="estoquevirtual">📦 Estoque Virtual</button>
-        <button class="aba-btn" data-aba="paletes">📋 Itens por Palete</button>
+        <button class="aba-btn" data-aba="analiseProdutos">📊 Análise de Produtos</button>
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
     </div>
 
-    <!-- ABA 1: Código x Balança (sem fornecedor) -->
+    <!-- ABA 1: Código x Balança -->
     <div id="aba-codbalanca" class="conteudo-aba ativo">
         <div class="filtros">
             <div class="filtros-top">
@@ -391,7 +389,7 @@
         <div id="paginacaoCodBalanca" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 2: Estoque Virtual (com fornecedor) -->
+    <!-- ABA 2: Estoque Virtual -->
     <div id="aba-estoquevirtual" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
@@ -408,29 +406,31 @@
         <div id="paginacaoEstoque" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 3: Itens por Palete (com fornecedor e botão Buscar) -->
-    <div id="aba-paletes" class="conteudo-aba">
+    <!-- ABA 3: Análise de Produtos (agregado por produto) -->
+    <div id="aba-analiseProdutos" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
-                <div><label>🔍 Código ou Produto</label><input type="text" id="buscaPalete" placeholder="Ex: 127, BATATA"></div>
-                <div><label>🏢 Fornecedor</label><input type="text" id="buscaPaleteFornecedor" placeholder="Ex: AURORA, SADIA"></div>
-                <div><label>📅 Mês/Ano de validade</label><select id="mesAnoValidade"><option value="todos">Todos os meses/anos</option></select></div>
-                <div class="stats" id="statsPalete">0 itens exibidos</div>
+                <div><label>🔍 Código ou Produto</label><input type="text" id="buscaProdutos" placeholder="Ex: 127, BATATA"></div>
+                <div><label>🏢 Fornecedor</label><input type="text" id="buscaProdutosFornecedor" placeholder="Ex: AURORA, SADIA"></div>
+                <div><label>📅 Período de validade (dias)</label><select id="filtroValidade">
+                    <option value="todos">Todos</option>
+                    <option value="30">≤ 30 dias</option>
+                    <option value="60">≤ 60 dias</option>
+                    <option value="90">≤ 90 dias</option>
+                </select></div>
+                <div class="stats" id="statsProdutos">0 itens exibidos</div>
             </div>
             <div class="filtros-botoes">
-                <button id="btnVisaoPaletes" class="btn-acao">🃏 Ver como Cards</button>
-                <span style="font-weight: 600; margin-left: 8px;">Agrupar por:</span>
-                <label><input type="checkbox" id="agruparData" value="data"> Data Entrada</label>
-                <label><input type="checkbox" id="agruparFornecedor" value="fornecedor"> Fornecedor</label>
-                <label><input type="checkbox" id="agruparPalete" value="palete"> Palete</label>
-                <button id="btnBuscarPaletes" class="btn-acao btn-buscar">🔍 Buscar</button>
+                <button id="btnVisaoProdutos" class="btn-acao">🃏 Ver como Cards</button>
+                <button id="btnBuscarProdutos" class="btn-acao btn-buscar">🔍 Buscar</button>
             </div>
         </div>
-        <div id="statusPalete" class="carregando">Carregando dados...</div>
-        <div id="conteudoPalete"></div>
+        <div id="statusProdutos" class="carregando">Carregando dados...</div>
+        <div id="conteudoProdutos"></div>
+        <div id="paginacaoProdutos" class="paginacao" style="display: none;"></div>
     </div>
 
-    <!-- ABA 4: Análise de Estoque (com fornecedor) -->
+    <!-- ABA 4: Análise de Estoque (original) -->
     <div id="aba-analise" class="conteudo-aba">
         <div class="filtros">
             <div class="filtros-top">
@@ -466,7 +466,7 @@
     const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
     const SHEET_CODBALANCA = 'CodBalanca';
     const SHEET_ESTOQUE = 'EstoqueVirtual';
-    const SHEET_PALETES = 'DadosLimpos';
+    const SHEET_PALETES = 'DadosLimpos';      // dados de entrada
     const SHEET_ATUALIZADA = 'Atualizada';
 
     const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
@@ -485,14 +485,12 @@
         diasSemVenda: new Map()
     };
 
-    let ultimaEntradaMap = new Map();
-
     let ultimaAtualizacao = new Date();
 
     let ordenacao = {
         codbalanca: { coluna: 'Balanca', direcao: 'asc' },
         estoque: { coluna: null, direcao: 'asc' },
-        paletes: { coluna: 'Codigo', direcao: 'asc' },
+        produtos: { coluna: 'codigo', direcao: 'asc' }, // novo
         analise: { coluna: null, direcao: 'asc' }
     };
 
@@ -500,13 +498,14 @@
     let paginacao = {
         codbalanca: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
         estoque: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
+        produtos: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
         analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
     };
 
     let visao = {
         codbalanca: 'tabela',
         estoque: 'tabela',
-        paletes: 'tabela',
+        produtos: 'tabela',
         analise: 'tabela'
     };
 
@@ -520,42 +519,47 @@
         { campo: 'sugestao', label: 'Sugestão', padrao: true },
         { campo: 'motivo', label: 'Detalhe', padrao: false }
     ];
-
     let colunasVisiveis = [];
 
-    // Elementos DOM
+    // Elementos DOM (adaptado para nova aba)
     const topoDataDiv = document.getElementById('topoData');
     const abaBtns = document.querySelectorAll('.aba-btn');
     const conteudos = {
         codbalanca: document.getElementById('aba-codbalanca'),
         estoquevirtual: document.getElementById('aba-estoquevirtual'),
-        paletes: document.getElementById('aba-paletes'),
+        analiseProdutos: document.getElementById('aba-analiseProdutos'),
         analise: document.getElementById('aba-analise')
     };
+    // Campos da nova aba
+    const buscaProdutos = document.getElementById('buscaProdutos');
+    const buscaProdutosFornecedor = document.getElementById('buscaProdutosFornecedor');
+    const filtroValidade = document.getElementById('filtroValidade');
+    const statsProdutos = document.getElementById('statsProdutos');
+    const statusProdutosDiv = document.getElementById('statusProdutos');
+    const conteudoProdutosDiv = document.getElementById('conteudoProdutos');
+    const paginacaoProdutosDiv = document.getElementById('paginacaoProdutos');
+    const btnVisaoProdutos = document.getElementById('btnVisaoProdutos');
+    const btnBuscarProdutos = document.getElementById('btnBuscarProdutos');
+
+    // ... (resto dos elementos originais)
     const buscaCod = document.getElementById('buscaCodBalanca');
     const buscaEst = document.getElementById('buscaEstoque');
     const buscaEstFornecedor = document.getElementById('buscaEstoqueFornecedor');
-    const buscaPal = document.getElementById('buscaPalete');
-    const buscaPalFornecedor = document.getElementById('buscaPaleteFornecedor');
     const buscaAnalise = document.getElementById('buscaAnalise');
     const buscaAnaliseFornecedor = document.getElementById('buscaAnaliseFornecedor');
-    const mesAnoSelect = document.getElementById('mesAnoValidade');
     const stats = {
         cod: document.getElementById('statsCodBalanca'),
         est: document.getElementById('statsEstoque'),
-        pal: document.getElementById('statsPalete'),
         analise: document.getElementById('statsAnalise')
     };
     const statusDivs = {
         cod: document.getElementById('statusCodBalanca'),
         est: document.getElementById('statusEstoque'),
-        pal: document.getElementById('statusPalete'),
         analise: document.getElementById('statusAnalise')
     };
     const conteudoDivs = {
         cod: document.getElementById('conteudoCodBalanca'),
         est: document.getElementById('conteudoEstoque'),
-        pal: document.getElementById('conteudoPalete'),
         analise: document.getElementById('conteudoAnalise')
     };
     const paginacaoDivs = {
@@ -565,9 +569,7 @@
     };
     const btnVisaoCodBalanca = document.getElementById('btnVisaoCodBalanca');
     const btnVisaoEstoque = document.getElementById('btnVisaoEstoque');
-    const btnVisaoPaletes = document.getElementById('btnVisaoPaletes');
     const btnVisaoAnalise = document.getElementById('btnVisaoAnalise');
-    const btnBuscarPaletes = document.getElementById('btnBuscarPaletes');
     const btnConfigColunas = document.getElementById('btnConfigColunas');
     const modalColunas = document.getElementById('modalColunas');
     const checklistDiv = document.getElementById('checklistColunas');
@@ -624,8 +626,8 @@
         if (aba === 'estoque') {
             const numericas = ['Estoque', 'Dias sem venda'];
             if (numericas.includes(coluna)) return 'numero';
-        } else if (aba === 'paletes') {
-            const numericas = ['Qtde Esperada', 'Estoque Atual', 'Dias s/ Venda', 'Código'];
+        } else if (aba === 'produtos') {
+            const numericas = ['totalVolume', 'numEntradas', 'diasMediaValidade', 'diasAteVencimentoMaisCurto', 'estoqueAtual'];
             if (numericas.includes(coluna)) return 'numero';
         } else if (aba === 'analise') {
             const numericas = ['estoque', 'diasSemVenda'];
@@ -700,54 +702,18 @@
 
     async function carregarPaletes() {
         try {
-            statusDivs.pal.innerHTML = '<div class="carregando">⏳ Carregando dados...</div>';
             const resp = await fetch(URL_PALETES);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             dadosPaletes = await resp.json();
             if (!dadosPaletes.length) throw new Error('Nenhum dado na aba DadosLimpos');
-
-            // Preencher mapa de última entrada
-            ultimaEntradaMap.clear();
-            for (const item of dadosPaletes) {
-                const cod = item['Codigo']?.toString();
-                if (cod && item['Data Entrada']) {
-                    const dataAtual = ultimaEntradaMap.get(cod);
-                    if (!dataAtual || item['Data Entrada'] > dataAtual) {
-                        ultimaEntradaMap.set(cod, item['Data Entrada']);
-                    }
-                }
-            }
-
+            // Após carregar, podemos preparar os dados agregados
             if (dadosEstoque.length === 0) await carregarEstoque();
             else atualizarMapasEstoque();
-
-            // Preencher meses/anos
-            const mesesAnos = new Set();
-            dadosPaletes.forEach(i => {
-                const val = i['Validade'];
-                if (val && val.includes('/')) {
-                    const p = val.split('/');
-                    if (p.length === 3) mesesAnos.add(`${p[1]}/${p[2]}`);
-                }
-            });
-            const meses = Array.from(mesesAnos).sort((a,b) => {
-                const [m1,a1] = a.split('/'), [m2,a2] = b.split('/');
-                if (a1 !== a2) return a1 - a2;
-                return m1 - m2;
-            });
-            mesAnoSelect.innerHTML = '<option value="todos">Todos os meses/anos</option>';
-            meses.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                mesAnoSelect.appendChild(opt);
-            });
-
-            statusDivs.pal.style.display = 'none';
-            // Não aplica filtro automaticamente, aguarda o botão Buscar
+            // Inicializa a visualização da aba de produtos
+            aplicarFiltroProdutos();
         } catch (err) {
-            statusDivs.pal.innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
-            conteudoDivs.pal.innerHTML = '';
+            statusProdutosDiv.innerHTML = `<div class="erro">❌ Erro ao carregar dados de entrada: ${err.message}</div>`;
+            conteudoProdutosDiv.innerHTML = '';
         }
     }
 
@@ -757,49 +723,7 @@
         aplicarFiltroAnalise();
     }
 
-    // ==================== PREFERÊNCIAS DE VISUALIZAÇÃO ====================
-    function carregarPreferenciasVisao() {
-        const storedVisaoCod = localStorage.getItem('visao_codbalanca');
-        if (storedVisaoCod === 'cards' || storedVisaoCod === 'tabela') visao.codbalanca = storedVisaoCod;
-        const storedVisaoEst = localStorage.getItem('visao_estoque');
-        if (storedVisaoEst === 'cards' || storedVisaoEst === 'tabela') visao.estoque = storedVisaoEst;
-        const storedVisaoPal = localStorage.getItem('visao_paletes');
-        if (storedVisaoPal === 'cards' || storedVisaoPal === 'tabela') visao.paletes = storedVisaoPal;
-        const storedVisaoAnal = localStorage.getItem('visao_analise');
-        if (storedVisaoAnal === 'cards' || storedVisaoAnal === 'tabela') visao.analise = storedVisaoAnal;
-        atualizarBotoesVisao();
-    }
-
-    function atualizarBotoesVisao() {
-        if (btnVisaoCodBalanca) btnVisaoCodBalanca.innerHTML = visao.codbalanca === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
-        if (btnVisaoEstoque) btnVisaoEstoque.innerHTML = visao.estoque === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
-        if (btnVisaoPaletes) btnVisaoPaletes.innerHTML = visao.paletes === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
-        if (btnVisaoAnalise) btnVisaoAnalise.innerHTML = visao.analise === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
-    }
-
-    function alternarVisao(aba) {
-        if (aba === 'codbalanca') {
-            visao.codbalanca = visao.codbalanca === 'tabela' ? 'cards' : 'tabela';
-            localStorage.setItem('visao_codbalanca', visao.codbalanca);
-            aplicarFiltroCodBalanca();
-        } else if (aba === 'estoque') {
-            visao.estoque = visao.estoque === 'tabela' ? 'cards' : 'tabela';
-            localStorage.setItem('visao_estoque', visao.estoque);
-            aplicarFiltroEstoque();
-        } else if (aba === 'paletes') {
-            visao.paletes = visao.paletes === 'tabela' ? 'cards' : 'tabela';
-            localStorage.setItem('visao_paletes', visao.paletes);
-            // reaplica o filtro atual (com os parâmetros já definidos)
-            aplicarFiltroPaletes();
-        } else if (aba === 'analise') {
-            visao.analise = visao.analise === 'tabela' ? 'cards' : 'tabela';
-            localStorage.setItem('visao_analise', visao.analise);
-            aplicarFiltroAnalise();
-        }
-        atualizarBotoesVisao();
-    }
-
-    // ==================== ABA CÓDIGO X BALANÇA ====================
+    // ==================== ABA 1: Código x Balança (sem alterações) ====================
     function aplicarFiltroCodBalanca() {
         const termo = buscaCod.value.trim().toLowerCase();
         let filtrados = dadosCodBalanca;
@@ -838,10 +762,10 @@
                 + `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                               <td>${i['Balanca'] || ''}</td>
-                               <td>${i['Cod'] || ''}</td>
-                               <td>${i['Produto'] || ''}</td>
-                             </tr>`;
+                                <td>${i['Balanca'] || ''}</td>
+                                <td>${i['Cod'] || ''}</td>
+                                <td>${i['Produto'] || ''}</td>
+                              </tr>`;
             });
             html += `</tbody></table></div>`;
             conteudoDivs.cod.innerHTML = html;
@@ -879,7 +803,7 @@
         }
     }
 
-    // ==================== ABA ESTOQUE VIRTUAL ====================
+    // ==================== ABA 2: Estoque Virtual (sem alterações significativas) ====================
     function aplicarFiltroEstoque() {
         const termo = buscaEst.value.trim().toLowerCase();
         const termoForn = buscaEstFornecedor.value.trim().toLowerCase();
@@ -924,14 +848,14 @@
             html += `</thead><tbody>`;
             ordenados.forEach(i => {
                 html += `<tr>
-                               <td>${i['Codigo'] || ''}</td>
-                               <td>${i['Nome'] || ''}</td>
-                               <td class="qtde">${i['Estoque'] || '0'}</td>
-                               <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                               <td>${i['Última venda'] || ''}</td>
-                               <td>${i['Última Compra'] || ''}</td>
-                               <td>${i['Fornecedor'] || ''}</td>
-                             </tr>`;
+                                <td>${i['Codigo'] || ''}</td>
+                                <td>${i['Nome'] || ''}</td>
+                                <td class="qtde">${i['Estoque'] || '0'}</td>
+                                <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                                <td>${i['Última venda'] || ''}</td>
+                                <td>${i['Última Compra'] || ''}</td>
+                                <td>${i['Fornecedor'] || ''}</td>
+                              </tr>`;
             });
             html += `</tbody></table></div>`;
             conteudoDivs.est.innerHTML = html;
@@ -977,361 +901,230 @@
         }
     }
 
-    // ==================== ABA ITENS POR PALETE ====================
-    function aplicarFiltroPaletes() {
-        const termo = buscaPal.value.trim().toLowerCase();
-        const termoForn = buscaPalFornecedor.value.trim().toLowerCase();
-        const mesAno = mesAnoSelect.value;
+    // ==================== NOVA ABA 3: ANÁLISE DE PRODUTOS (agregado) ====================
+    function aplicarFiltroProdutos() {
+        const termo = buscaProdutos.value.trim().toLowerCase();
+        const termoForn = buscaProdutosFornecedor.value.trim().toLowerCase();
+        const filtroDias = filtroValidade.value;
 
-        let filtrados = dadosPaletes.filter(i => {
-            if (mesAno !== 'todos') {
-                const val = i['Validade'] || '';
-                const partes = val.split('/');
-                if (partes.length === 3) {
-                    const ma = `${partes[1]}/${partes[2]}`;
-                    if (ma !== mesAno) return false;
-                } else return false;
-            }
-            if (termo || termoForn) {
-                const cod = (i['Codigo'] || '').toString().toLowerCase();
-                const prod = (i['Produto'] || '').toLowerCase();
-                const forn = (mapasGlobal.fornecedor.get(i['Codigo']?.toString()) || '').toLowerCase();
-                let match = true;
-                if (termo) match = match && (cod.includes(termo) || prod.includes(termo));
-                if (termoForn) match = match && forn.includes(termoForn);
-                return match;
-            }
-            return true;
-        });
+        // Agrupar por código
+        const agregado = new Map(); // key: codigo, value: objeto agregado
 
-        stats.pal.textContent = `${filtrados.length} itens exibidos`;
-        const tipo = getTipoColuna('paletes', ordenacao.paletes.coluna);
-        const ordenados = ordenarDados(filtrados, ordenacao.paletes.coluna, ordenacao.paletes.direcao, tipo);
-        renderizarPaletes(ordenados);
-    }
-
-    function obterSugestao(item, estoqueAtual, diasSemVenda) {
-        const cod = item['Codigo']?.toString();
-        const validadeStr = item['Validade'] || '';
-        const qtdeEsperada = normalizarNumero(item['Qtde Esperada']);
-
-        if (validadeStr) {
+        for (const entrada of dadosPaletes) {
+            const cod = entrada['Codigo']?.toString();
+            if (!cod) continue;
+            const produto = entrada['Produto'] || '';
+            const qtde = normalizarNumero(entrada['Qtde Esperada']);
+            const validadeStr = entrada['Validade'];
+            const dataEntrada = entrada['Data Entrada'];
             const dataVal = parseDataBrasil(validadeStr);
+            const hoje = new Date();
+
+            if (!agregado.has(cod)) {
+                agregado.set(cod, {
+                    codigo: cod,
+                    nome: produto,
+                    totalVolume: 0,
+                    numEntradas: 0,
+                    ultimaEntrada: null,
+                    validades: [],
+                    ultimaDataValidade: null,
+                    primeiraDataValidade: null
+                });
+            }
+            const obj = agregado.get(cod);
+            obj.totalVolume += qtde;
+            obj.numEntradas++;
+            if (dataEntrada && (!obj.ultimaEntrada || dataEntrada > obj.ultimaEntrada)) {
+                obj.ultimaEntrada = dataEntrada;
+            }
             if (dataVal) {
-                const diasParaValidade = Math.ceil((dataVal - new Date()) / (1000 * 3600 * 24));
-                if (diasParaValidade >= 0 && diasParaValidade <= 30) {
-                    return { sugestao: '⚠️ Vencimento próximo', classe: 'atencao' };
-                }
+                obj.validades.push(dataVal);
+                if (!obj.primeiraDataValidade || dataVal < obj.primeiraDataValidade) obj.primeiraDataValidade = dataVal;
+                if (!obj.ultimaDataValidade || dataVal > obj.ultimaDataValidade) obj.ultimaDataValidade = dataVal;
             }
         }
 
-        if (estoqueAtual > 0 && diasSemVenda > 60) {
-            return { sugestao: '⚠️ Baixo giro', classe: 'negativo' };
-        }
-        if (qtdeEsperada > estoqueAtual * 1.2 && estoqueAtual > 0) {
-            return { sugestao: '📦 Excesso de entrada', classe: 'atencao' };
-        }
-        if (estoqueAtual === 0 && diasSemVenda > 30) {
-            return { sugestao: '🔄 Prioridade de venda', classe: 'positivo' };
-        }
-
-        const ultimaEntrada = ultimaEntradaMap.get(cod);
-        if (ultimaEntrada) {
-            const dataEntrada = parseDataBrasil(ultimaEntrada);
-            if (dataEntrada) {
-                const diasUltimaEntrada = Math.ceil((new Date() - dataEntrada) / (1000 * 3600 * 24));
-                if (diasUltimaEntrada > 90 && estoqueAtual < qtdeEsperada * 0.5) {
-                    return { sugestao: '🔄 Reposição necessária', classe: 'atencao' };
-                }
+        // Calcular métricas adicionais
+        const produtos = [];
+        for (const [cod, obj] of agregado.entries()) {
+            // dias médios de validade (considerando as datas de validade)
+            let mediaValidade = null;
+            if (obj.validades.length > 0) {
+                const somaDias = obj.validades.reduce((acc, d) => acc + d.getTime(), 0);
+                const mediaMs = somaDias / obj.validades.length;
+                mediaValidade = new Date(mediaMs);
             }
-        }
-        return { sugestao: 'OK', classe: '' };
-    }
-
-    function renderizarPaletes(itens) {
-        if (!itens.length) {
-            conteudoDivs.pal.innerHTML = '<div class="vazio">Nenhum item corresponde aos filtros.</div>';
-            return;
-        }
-
-        const agruparData = document.getElementById('agruparData')?.checked || false;
-        const agruparFornecedor = document.getElementById('agruparFornecedor')?.checked || false;
-        const agruparPalete = document.getElementById('agruparPalete')?.checked || false;
-
-        if (!agruparData && !agruparFornecedor && !agruparPalete) {
-            renderizarSemAgrupamento(itens);
-            return;
-        }
-
-        const niveis = [];
-        if (agruparData) niveis.push('data');
-        if (agruparFornecedor) niveis.push('fornecedor');
-        if (agruparPalete) niveis.push('palete');
-
-        function ordenarChavesGrupo(chaves, nivel) {
-            if (nivel === 'data') {
-                return chaves.sort((a, b) => {
-                    if (a === 'Sem data') return 1;
-                    if (b === 'Sem data') return -1;
-                    const [da, ma, aa] = a.split('/');
-                    const [db, mb, ab] = b.split('/');
-                    return new Date(aa, ma-1, da) - new Date(ab, mb-1, db);
-                });
-            } else if (nivel === 'palete') {
-                return chaves.sort((a, b) => {
-                    const numA = normalizarNumero(a);
-                    const numB = normalizarNumero(b);
-                    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                    return a.localeCompare(b);
-                });
-            } else {
-                return chaves.sort((a, b) => a.localeCompare(b));
+            // dias até o vencimento mais curto
+            let diasAteVencimentoMaisCurto = null;
+            if (obj.primeiraDataValidade) {
+                const diff = obj.primeiraDataValidade - new Date();
+                diasAteVencimentoMaisCurto = Math.ceil(diff / (1000 * 3600 * 24));
             }
-        }
-
-        function agruparPorNiveis(lista, nivelIndex) {
-            if (nivelIndex >= niveis.length) return lista;
-            const nivel = niveis[nivelIndex];
-            const grupos = new Map();
-            for (const item of lista) {
-                let chave;
-                if (nivel === 'data') chave = item['Data Entrada'] || 'Sem data';
-                else if (nivel === 'fornecedor') {
-                    const cod = item['Codigo']?.toString();
-                    chave = mapasGlobal.fornecedor.get(cod) || 'Não informado';
-                } else if (nivel === 'palete') chave = item['Palete'] || 'SEM PALETE';
-                if (!grupos.has(chave)) grupos.set(chave, []);
-                grupos.get(chave).push(item);
+            // dias até o vencimento mais longo
+            let diasAteVencimentoMaisLongo = null;
+            if (obj.ultimaDataValidade) {
+                const diff = obj.ultimaDataValidade - new Date();
+                diasAteVencimentoMaisLongo = Math.ceil(diff / (1000 * 3600 * 24));
             }
-            const chavesOrdenadas = ordenarChavesGrupo(Array.from(grupos.keys()), nivel);
-            const resultado = [];
-            for (const chave of chavesOrdenadas) {
-                const subLista = grupos.get(chave);
-                const subAgrupado = agruparPorNiveis(subLista, nivelIndex + 1);
-                resultado.push({ nivel, chave, itens: subAgrupado });
-            }
-            return resultado;
-        }
-
-        const estruturaAgrupada = agruparPorNiveis(itens, 0);
-
-        function renderizarEstrutura(estrutura, nivelProfundidade = 0) {
-            let html = '';
-            for (const grupo of estrutura) {
-                if (Array.isArray(grupo.itens) && grupo.itens.length === 0) continue;
-                if (Array.isArray(grupo.itens) && grupo.itens.length > 0 && typeof grupo.itens[0] === 'object' && !grupo.itens[0].nivel) {
-                    html += renderizarItens(grupo.itens, grupo.nivel, grupo.chave);
-                } else {
-                    const titulo = `${grupo.nivel === 'data' ? 'Data Entrada' : grupo.nivel === 'fornecedor' ? 'Fornecedor' : 'Palete'}: ${grupo.chave}`;
-                    html += `<div class="bloco-palete" style="margin-left: ${nivelProfundidade * 20}px;">`;
-                    html += `<div class="titulo-palete">${titulo}</div>`;
-                    html += renderizarEstrutura(grupo.itens, nivelProfundidade + 1);
-                    html += `</div>`;
-                }
-            }
-            return html;
-        }
-
-        function renderizarItens(itensGrupo, nivel, chaveGrupo) {
-            if (visao.paletes === 'tabela') {
-                let html = `<div class="tabela-wrapper"><table class="tabela-paletes-grupo"><thead>`;
-                html += `<th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                         <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                         <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                         <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                         <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                         <th>Fornecedor</th>
-                         <th>Estoque Atual</th>
-                         <th>Dias s/ Venda</th>
-                         <th>Última Entrada</th>
-                         <th>Sugestão</th>
-                         </thead><tbody>`;
-                for (const item of itensGrupo) {
-                    const cod = item['Codigo']?.toString();
-                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
-                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
-                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                    html += `<tr class="${classe}">
-                                <td class="codigo">${item['Codigo'] || ''}</td>
-                                <td>${item['Produto'] || ''}</td>
-                                <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                                <td>${item['Validade'] || ''}</td>
-                                <td>${item['Data Entrada'] || ''}</td>
-                                <td>${fornItem}</td>
-                                <td class="qtde">${estoqueAtual}</td>
-                                <td class="qtde">${diasSemVenda}</td>
-                                <td>${ultimaEntrada}</td>
-                                <td>${sugestao}</td>
-                              </tr>`;
-                }
-                html += `</tbody></table></div>`;
-                return html;
-            } else {
-                let html = `<div class="cards-view">`;
-                for (const item of itensGrupo) {
-                    const cod = item['Codigo']?.toString();
-                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
-                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
-                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                    html += `<div class="card-item ${classe}">
-                                <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Qtde:</span><span class="valor">${item['Qtde Esperada'] || '0'}</span></div>
-                                <div class="card-linha"><span class="label">Validade:</span><span class="valor">${item['Validade'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Data Entrada:</span><span class="valor">${item['Data Entrada'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
-                                <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
-                                <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
-                                <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${ultimaEntrada}</span></div>
-                                <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
-                              </div>`;
-                }
-                html += `</div>`;
-                return html;
-            }
-        }
-
-        const htmlAgrupado = renderizarEstrutura(estruturaAgrupada);
-        conteudoDivs.pal.innerHTML = htmlAgrupado;
-        attachOrdenacaoPaletes();
-    }
-
-    function renderizarSemAgrupamento(itens) {
-        const ITENS_POR_PAGINA_PALETES = 100;
-        let paginaAtual = 1;
-        let totalPaginas = Math.ceil(itens.length / ITENS_POR_PAGINA_PALETES);
-
-        function renderizarPagina() {
-            const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA_PALETES;
-            const fim = inicio + ITENS_POR_PAGINA_PALETES;
-            const paginaDados = itens.slice(inicio, fim);
-
-            if (visao.paletes === 'tabela') {
-                let html = `<div class="tabela-wrapper"><table id="tabela-paletes-nenhum"><thead>`;
-                html += `<th>Código <span class="ordenar-btn" data-coluna="Codigo">⇅</span></th>
-                         <th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th>
-                         <th>Qtde <span class="ordenar-btn" data-coluna="Qtde Esperada">⇅</span></th>
-                         <th>Validade <span class="ordenar-btn" data-coluna="Validade">⇅</span></th>
-                         <th>Data Entrada <span class="ordenar-btn" data-coluna="Data Entrada">⇅</span></th>
-                         <th>Fornecedor</th>
-                         <th>Estoque Atual</th>
-                         <th>Dias s/ Venda</th>
-                         <th>Última Entrada</th>
-                         <th>Sugestão</th>
-                         </thead><tbody>`;
-                for (const item of paginaDados) {
-                    const cod = item['Codigo']?.toString();
-                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
-                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
-                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                    html += `<tr class="${classe}">
-                                <td class="codigo">${item['Codigo'] || ''}</td>
-                                <td>${item['Produto'] || ''}</td>
-                                <td class="qtde">${item['Qtde Esperada'] || '0'}</td>
-                                <td>${item['Validade'] || ''}</td>
-                                <td>${item['Data Entrada'] || ''}</td>
-                                <td>${fornItem}</td>
-                                <td class="qtde">${estoqueAtual}</td>
-                                <td class="qtde">${diasSemVenda}</td>
-                                <td>${ultimaEntrada}</td>
-                                <td>${sugestao}</td>
-                              </tr>`;
-                }
-                html += `</tbody></table></div>`;
-                conteudoDivs.pal.innerHTML = html;
-
-                if (totalPaginas > 1) {
-                    let pagHtml = '<div class="paginacao">';
-                    for (let i = 1; i <= totalPaginas; i++) {
-                        pagHtml += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina-paletes="${i}">${i}</button>`;
-                    }
-                    pagHtml += '</div>';
-                    conteudoDivs.pal.innerHTML += pagHtml;
-                }
-
-                document.querySelectorAll('#tabela-paletes-nenhum th .ordenar-btn').forEach(btn => {
-                    btn.addEventListener('click', e => {
-                        const coluna = btn.dataset.coluna;
-                        const tipo = getTipoColuna('paletes', coluna);
-                        if (ordenacao.paletes.coluna === coluna) {
-                            ordenacao.paletes.direcao = ordenacao.paletes.direcao === 'asc' ? 'desc' : 'asc';
-                        } else {
-                            ordenacao.paletes.coluna = coluna;
-                            ordenacao.paletes.direcao = 'asc';
-                        }
-                        const ordenados = ordenarDados(itens, ordenacao.paletes.coluna, ordenacao.paletes.direcao, tipo);
-                        renderizarSemAgrupamento(ordenados);
-                    });
-                });
-            } else {
-                let html = `<div class="cards-view">`;
-                for (const item of paginaDados) {
-                    const cod = item['Codigo']?.toString();
-                    const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
-                    const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
-                    const ultimaEntrada = ultimaEntradaMap.get(cod) || '';
-                    const { sugestao, classe } = obterSugestao(item, estoqueAtual, diasSemVenda);
-                    const fornItem = mapasGlobal.fornecedor.get(cod) || '';
-                    html += `<div class="card-item ${classe}">
-                                <div class="card-linha"><span class="label">Código:</span><span class="valor">${item['Codigo'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Produto:</span><span class="valor">${item['Produto'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Qtde:</span><span class="valor">${item['Qtde Esperada'] || '0'}</span></div>
-                                <div class="card-linha"><span class="label">Validade:</span><span class="valor">${item['Validade'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Data Entrada:</span><span class="valor">${item['Data Entrada'] || ''}</span></div>
-                                <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${fornItem}</span></div>
-                                <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${estoqueAtual}</span></div>
-                                <div class="card-linha"><span class="label">Dias s/ Venda:</span><span class="valor">${diasSemVenda}</span></div>
-                                <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${ultimaEntrada}</span></div>
-                                <div class="card-linha sugestao"><span class="label">Sugestão:</span><span class="valor">${sugestao}</span></div>
-                              </div>`;
-                }
-                html += `</div>`;
-                conteudoDivs.pal.innerHTML = html;
-
-                if (totalPaginas > 1) {
-                    let pagHtml = '<div class="paginacao">';
-                    for (let i = 1; i <= totalPaginas; i++) {
-                        pagHtml += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina-paletes="${i}">${i}</button>`;
-                    }
-                    pagHtml += '</div>';
-                    conteudoDivs.pal.innerHTML += pagHtml;
+            // média de dias de validade (diferença entre data de entrada e validade) - opcional
+            let mediaDiasValidade = null;
+            if (obj.validades.length > 0 && obj.ultimaEntrada) {
+                const dataEntradaRef = parseDataBrasil(obj.ultimaEntrada);
+                if (dataEntradaRef) {
+                    const soma = obj.validades.reduce((acc, d) => acc + (d - dataEntradaRef), 0);
+                    mediaDiasValidade = Math.ceil(soma / obj.validades.length / (1000 * 3600 * 24));
                 }
             }
 
-            document.querySelectorAll('[data-pagina-paletes]').forEach(btn => {
-                btn.addEventListener('click', e => {
-                    paginaAtual = parseInt(e.target.dataset.paginaPaletes);
-                    renderizarPagina();
-                });
+            // Obter fornecedor do mapa (se disponível)
+            const fornecedor = mapasGlobal.fornecedor.get(cod) || '';
+            const estoqueAtual = mapasGlobal.estoque.get(cod) || 0;
+            const diasSemVenda = mapasGlobal.diasSemVenda.get(cod) || 0;
+
+            produtos.push({
+                codigo: cod,
+                nome: obj.nome,
+                fornecedor: fornecedor,
+                totalVolume: obj.totalVolume,
+                numEntradas: obj.numEntradas,
+                ultimaEntrada: obj.ultimaEntrada || '',
+                validadeMaisCurta: obj.primeiraDataValidade ? formatarDataBrasil(obj.primeiraDataValidade) : '',
+                validadeMaisLonga: obj.ultimaDataValidade ? formatarDataBrasil(obj.ultimaDataValidade) : '',
+                diasAteVencimentoMaisCurto: diasAteVencimentoMaisCurto,
+                diasAteVencimentoMaisLongo: diasAteVencimentoMaisLongo,
+                mediaDiasValidade: mediaDiasValidade,
+                estoqueAtual: estoqueAtual,
+                diasSemVenda: diasSemVenda
             });
         }
 
-        renderizarPagina();
-    }
-
-    function attachOrdenacaoPaletes() {
-        document.querySelectorAll('#conteudoPalete .ordenar-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                const coluna = btn.dataset.coluna;
-                const tipo = getTipoColuna('paletes', coluna);
-                if (ordenacao.paletes.coluna === coluna) {
-                    ordenacao.paletes.direcao = ordenacao.paletes.direcao === 'asc' ? 'desc' : 'asc';
+        // Aplicar filtros de busca e validade
+        let filtrados = produtos.filter(p => {
+            let match = true;
+            if (termo) {
+                match = match && (p.codigo.includes(termo) || p.nome.toLowerCase().includes(termo));
+            }
+            if (termoForn) {
+                match = match && p.fornecedor.toLowerCase().includes(termoForn);
+            }
+            if (filtroDias !== 'todos') {
+                const limite = parseInt(filtroDias);
+                if (p.diasAteVencimentoMaisCurto !== null && p.diasAteVencimentoMaisCurto <= limite) {
+                    // ok, mantém
                 } else {
-                    ordenacao.paletes.coluna = coluna;
-                    ordenacao.paletes.direcao = 'asc';
+                    match = false;
                 }
-                aplicarFiltroPaletes();
-            });
+            }
+            return match;
         });
+
+        statsProdutos.textContent = `${filtrados.length} produtos exibidos`;
+        paginacao.produtos.dadosFiltrados = filtrados;
+        paginacao.produtos.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+        paginacao.produtos.paginaAtual = 1;
+        renderizarProdutos();
     }
 
-    // ==================== ABA ANÁLISE DE ESTOQUE ====================
+    function renderizarProdutos() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.produtos;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const fim = inicio + ITENS_POR_PAGINA;
+        const paginaDados = dadosFiltrados.slice(inicio, fim);
+        const ordenados = ordenarDados(paginaDados, ordenacao.produtos.coluna, ordenacao.produtos.direcao,
+            getTipoColuna('produtos', ordenacao.produtos.coluna));
+
+        if (!ordenados.length) {
+            conteudoProdutosDiv.innerHTML = '<div class="vazio">Nenhum produto corresponde aos filtros.</div>';
+            paginacaoProdutosDiv.style.display = 'none';
+            return;
+        }
+
+        if (visao.produtos === 'tabela') {
+            let html = `<div class="tabela-wrapper"><table id="tabela-produtos"><thead>`;
+            const colunas = [
+                'Código', 'Produto', 'Fornecedor', 'Total Volume', 'Nº Entradas', 'Última Entrada',
+                'Validade + Curta', 'Validade + Longa', 'Dias até venc. curto', 'Dias até venc. longo',
+                'Média dias validade', 'Estoque Atual', 'Dias sem venda'
+            ];
+            const campos = [
+                'codigo', 'nome', 'fornecedor', 'totalVolume', 'numEntradas', 'ultimaEntrada',
+                'validadeMaisCurta', 'validadeMaisLonga', 'diasAteVencimentoMaisCurto', 'diasAteVencimentoMaisLongo',
+                'mediaDiasValidade', 'estoqueAtual', 'diasSemVenda'
+            ];
+            colunas.forEach((col, idx) => {
+                html += `<th>${col} <span class="ordenar-btn" data-coluna="${campos[idx]}">⇅</span></th>`;
+            });
+            html += `</thead><tbody>`;
+            for (const p of ordenados) {
+                let classe = '';
+                if (p.diasAteVencimentoMaisCurto !== null && p.diasAteVencimentoMaisCurto <= 30) classe = 'atencao';
+                else if (p.estoqueAtual > 0 && p.diasSemVenda > 60) classe = 'negativo';
+                html += `<tr class="${classe}">
+                            <td>${p.codigo}</td>
+                            <td>${p.nome}</td>
+                            <td>${p.fornecedor}</td>
+                            <td class="qtde">${p.totalVolume}</td>
+                            <td class="qtde">${p.numEntradas}</td>
+                            <td>${p.ultimaEntrada}</td>
+                            <td>${p.validadeMaisCurta}</td>
+                            <td>${p.validadeMaisLonga}</td>
+                            <td class="qtde">${p.diasAteVencimentoMaisCurto !== null ? p.diasAteVencimentoMaisCurto : '-'}</td>
+                            <td class="qtde">${p.diasAteVencimentoMaisLongo !== null ? p.diasAteVencimentoMaisLongo : '-'}</td>
+                            <td class="qtde">${p.mediaDiasValidade !== null ? p.mediaDiasValidade : '-'}</td>
+                            <td class="qtde">${p.estoqueAtual}</td>
+                            <td class="qtde">${p.diasSemVenda}</td>
+                          </tr>`;
+            }
+            html += `</tbody></table></div>`;
+            conteudoProdutosDiv.innerHTML = html;
+
+            document.querySelectorAll('#tabela-produtos th .ordenar-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const coluna = btn.dataset.coluna;
+                    if (ordenacao.produtos.coluna === coluna) {
+                        ordenacao.produtos.direcao = ordenacao.produtos.direcao === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        ordenacao.produtos.coluna = coluna;
+                        ordenacao.produtos.direcao = 'asc';
+                    }
+                    renderizarProdutos();
+                });
+            });
+        } else {
+            let html = `<div class="cards-view">`;
+            for (const p of ordenados) {
+                let classe = '';
+                if (p.diasAteVencimentoMaisCurto !== null && p.diasAteVencimentoMaisCurto <= 30) classe = 'atencao';
+                else if (p.estoqueAtual > 0 && p.diasSemVenda > 60) classe = 'negativo';
+                html += `<div class="card-item ${classe}">
+                            <div class="card-linha"><span class="label">Código:</span><span class="valor">${p.codigo}</span></div>
+                            <div class="card-linha"><span class="label">Produto:</span><span class="valor">${p.nome}</span></div>
+                            <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${p.fornecedor}</span></div>
+                            <div class="card-linha"><span class="label">Total Volume:</span><span class="valor">${p.totalVolume}</span></div>
+                            <div class="card-linha"><span class="label">Nº Entradas:</span><span class="valor">${p.numEntradas}</span></div>
+                            <div class="card-linha"><span class="label">Última Entrada:</span><span class="valor">${p.ultimaEntrada}</span></div>
+                            <div class="card-linha"><span class="label">Validade + Curta:</span><span class="valor">${p.validadeMaisCurta}</span></div>
+                            <div class="card-linha"><span class="label">Dias até venc. curto:</span><span class="valor">${p.diasAteVencimentoMaisCurto !== null ? p.diasAteVencimentoMaisCurto : '-'}</span></div>
+                            <div class="card-linha"><span class="label">Dias até venc. longo:</span><span class="valor">${p.diasAteVencimentoMaisLongo !== null ? p.diasAteVencimentoMaisLongo : '-'}</span></div>
+                            <div class="card-linha"><span class="label">Média dias validade:</span><span class="valor">${p.mediaDiasValidade !== null ? p.mediaDiasValidade : '-'}</span></div>
+                            <div class="card-linha"><span class="label">Estoque Atual:</span><span class="valor">${p.estoqueAtual}</span></div>
+                            <div class="card-linha"><span class="label">Dias sem venda:</span><span class="valor">${p.diasSemVenda}</span></div>
+                         </div>`;
+            }
+            html += `</div>`;
+            conteudoProdutosDiv.innerHTML = html;
+        }
+
+        if (totalPaginas > 1) {
+            paginacaoProdutosDiv.style.display = 'flex';
+            paginacaoProdutosDiv.innerHTML = gerarBotoesPaginacao(paginacao.produtos.paginaAtual, totalPaginas, 'produtos');
+        } else {
+            paginacaoProdutosDiv.style.display = 'none';
+        }
+    }
+
+    // ==================== ABA 4: Análise de Estoque (original, sem alterações significativas) ====================
     function carregarPreferenciasAnalise() {
         const savedColunas = localStorage.getItem('analise_colunas');
         if (savedColunas) {
@@ -1550,7 +1343,49 @@
         paginacao[aba].paginaAtual = pagina;
         if (aba === 'codbalanca') renderizarCodBalanca();
         else if (aba === 'estoque') renderizarEstoque();
+        else if (aba === 'produtos') renderizarProdutos();
         else if (aba === 'analise') renderizarAnalise();
+    }
+
+    // ==================== PREFERÊNCIAS DE VISUALIZAÇÃO ====================
+    function carregarPreferenciasVisao() {
+        const storedVisaoCod = localStorage.getItem('visao_codbalanca');
+        if (storedVisaoCod === 'cards' || storedVisaoCod === 'tabela') visao.codbalanca = storedVisaoCod;
+        const storedVisaoEst = localStorage.getItem('visao_estoque');
+        if (storedVisaoEst === 'cards' || storedVisaoEst === 'tabela') visao.estoque = storedVisaoEst;
+        const storedVisaoProd = localStorage.getItem('visao_produtos');
+        if (storedVisaoProd === 'cards' || storedVisaoProd === 'tabela') visao.produtos = storedVisaoProd;
+        const storedVisaoAnal = localStorage.getItem('visao_analise');
+        if (storedVisaoAnal === 'cards' || storedVisaoAnal === 'tabela') visao.analise = storedVisaoAnal;
+        atualizarBotoesVisao();
+    }
+
+    function atualizarBotoesVisao() {
+        if (btnVisaoCodBalanca) btnVisaoCodBalanca.innerHTML = visao.codbalanca === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoEstoque) btnVisaoEstoque.innerHTML = visao.estoque === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoProdutos) btnVisaoProdutos.innerHTML = visao.produtos === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+        if (btnVisaoAnalise) btnVisaoAnalise.innerHTML = visao.analise === 'tabela' ? '🃏 Ver como Cards' : '📋 Ver como Tabela';
+    }
+
+    function alternarVisao(aba) {
+        if (aba === 'codbalanca') {
+            visao.codbalanca = visao.codbalanca === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_codbalanca', visao.codbalanca);
+            aplicarFiltroCodBalanca();
+        } else if (aba === 'estoque') {
+            visao.estoque = visao.estoque === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_estoque', visao.estoque);
+            aplicarFiltroEstoque();
+        } else if (aba === 'produtos') {
+            visao.produtos = visao.produtos === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_produtos', visao.produtos);
+            renderizarProdutos();
+        } else if (aba === 'analise') {
+            visao.analise = visao.analise === 'tabela' ? 'cards' : 'tabela';
+            localStorage.setItem('visao_analise', visao.analise);
+            aplicarFiltroAnalise();
+        }
+        atualizarBotoesVisao();
     }
 
     // ==================== EVENTOS ====================
@@ -1572,17 +1407,13 @@
     buscaEstFornecedor.addEventListener('input', aplicarFiltroEstoque);
     buscaAnalise.addEventListener('input', aplicarFiltroAnalise);
     buscaAnaliseFornecedor.addEventListener('input', aplicarFiltroAnalise);
-    mesAnoSelect.addEventListener('change', () => { /* only button triggers */ });
-    // Botões de visão
+    btnBuscarProdutos.addEventListener('click', () => aplicarFiltroProdutos());
+    btnVisaoProdutos.addEventListener('click', () => alternarVisao('produtos'));
+
     btnVisaoCodBalanca.addEventListener('click', () => alternarVisao('codbalanca'));
     btnVisaoEstoque.addEventListener('click', () => alternarVisao('estoque'));
-    btnVisaoPaletes.addEventListener('click', () => alternarVisao('paletes'));
     btnVisaoAnalise.addEventListener('click', () => alternarVisao('analise'));
-    // Botão Buscar para Paletes
-    btnBuscarPaletes.addEventListener('click', () => {
-        aplicarFiltroPaletes();
-    });
-    // Configuração de colunas
+
     btnConfigColunas.addEventListener('click', abrirModalColunas);
     fecharModal.addEventListener('click', fecharModalColunas);
     salvarColunasBtn.addEventListener('click', salvarColunasModal);
