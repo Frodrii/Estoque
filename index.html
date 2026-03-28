@@ -630,11 +630,11 @@
             for (const i of ordenados) {
                 const balanca = i['Balanca'] || '';
                 html += `<tr>
-                            <td>${balanca}</td>
-                            <td>${i['Cod'] || ''}</td>
+                            <td class="codigo">${balanca}</td>
+                            <td class="codigo">${i['Cod'] || ''}</td>
                             <td>${i['Produto'] || ''}</td>
                             <td><button class="btn-qr" data-valor="${balanca}">📷 QR</button></td>
-                           </tr>`;
+                            </tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -711,15 +711,15 @@
                 else if (estoque < limite) classe = 'estoque-baixo';
                 const qrValor = (i['Codigo'] || '') + '0001';
                 html += `<tr class="${classe}">
-                             <td>${i['Codigo'] || ''}</td>
-                             <td>${i['Nome'] || ''}</td>
-                             <td class="qtde">${estoque}</td>
-                             <td class="qtde">${i['Dias sem venda'] || ''}</td>
-                             <td>${i['Última venda'] || ''}</td>
-                             <td>${i['Última Compra'] || ''}</td>
-                             <td>${i['Fornecedor'] || ''}</td>
-                             <td><button class="btn-qr" data-valor="${qrValor}">📷 QR</button></td>
-                           </tr>`;
+                              <td class="codigo">${i['Codigo'] || ''}</td>
+                              <td>${i['Nome'] || ''}</td>
+                              <td class="qtde">${estoque}</td>
+                              <td class="qtde">${i['Dias sem venda'] || ''}</td>
+                              <td>${i['Última venda'] || ''}</td>
+                              <td>${i['Última Compra'] || ''}</td>
+                              <td>${i['Fornecedor'] || ''}</td>
+                              <td><button class="btn-qr" data-valor="${qrValor}">📷 QR</button></td>
+                            </tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -1067,6 +1067,8 @@
         const saved = localStorage.getItem(`visao_${aba}`);
         if (saved === 'tabela' || saved === 'cards') visao[aba] = saved;
     }
+
+    carregarPreferenciasAnalise();
 
     Promise.all([
         carregarAtualizada(),
