@@ -524,22 +524,27 @@
     }
 
     function ordenarDados(dados, coluna, direcao) {
-        if (!coluna) return dados;
-        return [...dados].sort((a, b) => {
-            let valA = a[coluna] !== undefined ? a[coluna] : '';
-            let valB = b[coluna] !== undefined ? b[coluna] : '';
-            const isNumber = !isNaN(parseFloat(valA)) && isFinite(valA);
-            if (isNumber) {
-                valA = normalizarNumero(valA);
-                valB = normalizarNumero(valB);
-                return direcao === 'asc' ? valA - valB : valB - valA;
-            } else {
-                valA = valA.toString().toLowerCase();
-                valB = valB.toString().toLowerCase();
-                return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            }
-        });
-    }
+    if (!coluna) return dados;
+    return [...dados].sort((a, b) => {
+        let valA = a[coluna] !== undefined ? a[coluna] : '';
+        let valB = b[coluna] !== undefined ? b[coluna] : '';
+
+        // Tenta converter ambos para número
+        const numA = typeof valA === 'number' ? valA : normalizarNumero(valA);
+        const numB = typeof valB === 'number' ? valB : normalizarNumero(valB);
+        const isNumA = !isNaN(numA) && isFinite(numA);
+        const isNumB = !isNaN(numB) && isFinite(numB);
+
+        if (isNumA && isNumB) {
+            return direcao === 'asc' ? numA - numB : numB - numA;
+        } else {
+            // Se não forem números, compara como string
+            valA = valA.toString().toLowerCase();
+            valB = valB.toString().toLowerCase();
+            return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+    });
+}
 
     function atualizarMapasEstoque() {
         mapasGlobal.fornecedor.clear();
@@ -589,18 +594,25 @@
     }
 
     async function carregarEstoque() {
-        try {
-            const resp = await fetch(URL_ESTOQUE);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosEstoque = await resp.json();
-            atualizarMapasEstoque();
-            aplicarFiltroEstoque();
-            atualizarDashboard();
-            document.getElementById('statusEstoque').style.display = 'none';
-        } catch (err) {
-            document.getElementById('statusEstoque').innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
-        }
+    try {
+        const resp = await fetch(URL_ESTOQUE);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        // Converte campos numéricos para número
+        dadosEstoque = data.map(item => ({
+            ...item,
+            Estoque: normalizarNumero(item['Estoque']),
+            'Dias sem venda': normalizarNumero(item['Dias sem venda']),
+            'Codigo': item['Codigo']?.toString() || ''
+        }));
+        atualizarMapasEstoque();
+        aplicarFiltroEstoque();
+        atualizarDashboard();
+        document.getElementById('statusEstoque').style.display = 'none';
+    } catch (err) {
+        document.getElementById('statusEstoque').innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
     }
+}
 
     async function carregarAnalise() {
         if (dadosEstoque.length === 0) await carregarEstoque();
@@ -722,7 +734,7 @@
             });
             html += `</thead><tbody>`;
             for (const i of ordenados) {
-                const estoque = normalizarNumero(i['Estoque']);
+                const estoque = i['Estoque']; // já é número
                 let classe = '';
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
@@ -743,7 +755,7 @@
         } else {
             let html = `<div class="cards-view">`;
             for (const i of ordenados) {
-                const estoque = normalizarNumero(i['Estoque']);
+                const estoque = i['Estoque']; // já é número
                 let classe = '';
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
