@@ -340,7 +340,14 @@
             color: white;
             cursor: pointer;
         }
-
+        #checklistColunas {
+            text-align: left;
+            margin: 16px 0;
+        }
+        #checklistColunas label {
+            display: block;
+            margin: 8px 0;
+        }
         @media (min-width: 768px) {
             body { padding: 24px; }
             h1 { font-size: 2.2rem; }
@@ -432,6 +439,16 @@
         <h3>Código QR</h3>
         <div id="qrCodeContainer"></div>
         <button onclick="fecharModalQR()">Fechar</button>
+    </div>
+</div>
+
+<!-- Modal Configurar Colunas -->
+<div id="modalColunas" class="modal">
+    <div class="modal-conteudo">
+        <h3>Escolha as colunas</h3>
+        <div id="checklistColunas"></div>
+        <button id="salvarColunas">Salvar</button>
+        <button id="fecharModal">Cancelar</button>
     </div>
 </div>
 
@@ -634,7 +651,7 @@
                             <td class="codigo">${i['Cod'] || ''}</td>
                             <td>${i['Produto'] || ''}</td>
                             <td><button class="btn-qr" data-valor="${balanca}">📷 QR</button></td>
-                            </tr>`;
+                         </tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -719,7 +736,7 @@
                               <td>${i['Última Compra'] || ''}</td>
                               <td>${i['Fornecedor'] || ''}</td>
                               <td><button class="btn-qr" data-valor="${qrValor}">📷 QR</button></td>
-                            </tr>`;
+                             </tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
