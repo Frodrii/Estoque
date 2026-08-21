@@ -348,6 +348,15 @@
             display: block;
             margin: 8px 0;
         }
+        details > summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #2563eb;
+            margin-top: 8px;
+        }
+        details table {
+            margin-top: 8px;
+        }
         @media (min-width: 768px) {
             body { padding: 24px; }
             h1 { font-size: 2.2rem; }
@@ -443,6 +452,7 @@
             </div>
             <div class="filtros-botoes">
                 <button id="btnVisaoValidade" class="btn-acao">🃏 Ver como Cards</button>
+                <button id="btnModoValidade" class="btn-acao">🗂️ Modo: Agrupado</button>
                 <button class="btn-acao filtro-status" data-status="todos">Todos</button>
                 <button class="btn-acao filtro-status" data-status="vencidos">Vencidos</button>
                 <button class="btn-acao filtro-status" data-status="criticos">Críticos (≤7d)</button>
@@ -503,7 +513,7 @@
         codbalanca: { coluna: 'Balanca', direcao: 'asc' },
         estoque: { coluna: null, direcao: 'asc' },
         analise: { coluna: null, direcao: 'asc' },
-        validade: { coluna: 'dataValidade', direcao: 'asc' }
+        validade: { coluna: 'validadeProxima', direcao: 'asc' }
     };
 
     let visao = {
@@ -512,6 +522,8 @@
         analise: 'tabela',
         validade: 'tabela'
     };
+
+    let modoAgrupadoValidade = true;
 
     const ITENS_POR_PAGINA = 100;
     let paginacao = {
@@ -561,12 +573,10 @@
             let valA = a[coluna] !== undefined ? a[coluna] : '';
             let valB = b[coluna] !== undefined ? b[coluna] : '';
 
-            // Se ambos são Date, compara timestamps
             if (valA instanceof Date && valB instanceof Date) {
                 return direcao === 'asc' ? valA - valB : valB - valA;
             }
 
-            // Tenta converter ambos para número
             const numA = typeof valA === 'number' ? valA : normalizarNumero(valA);
             const numB = typeof valB === 'number' ? valB : normalizarNumero(valB);
             const isNumA = !isNaN(numA) && isFinite(numA);
@@ -575,7 +585,6 @@
             if (isNumA && isNumB) {
                 return direcao === 'asc' ? numA - numB : numB - numA;
             } else {
-                // Se não forem números, compara como string
                 valA = valA.toString().toLowerCase();
                 valB = valB.toString().toLowerCase();
                 return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
@@ -1041,6 +1050,52 @@
     }
 
     // ==================== ABA VALIDADE ====================
+    function statusDoItem(dias) {
+        if (dias < 0) return { texto: 'Vencido', cor: '#6b7280' };
+        if (dias <= 7) return { texto: 'Crítico', cor: '#ef4444' };
+        if (dias <= 30) return { texto: 'Atenção', cor: '#f97316' };
+        if (dias <= 90) return { texto: 'Próximo', cor: '#eab308' };
+        return { texto: 'OK', cor: '#10b981' };
+    }
+
+    function agruparValidades(dados) {
+        const mapa = new Map();
+        dados.forEach(item => {
+            const chave = item.codigo || item.produto;
+            if (!mapa.has(chave)) {
+                mapa.set(chave, {
+                    codigo: item.codigo,
+                    produto: item.produto,
+                    fornecedor: item.fornecedor,
+                    locais: item.locais,
+                    lotes: [],
+                    totalEstoque: 0,
+                    numLotes: 0,
+                    validadeProxima: null,
+                    diasProximo: null
+                });
+            }
+            const grupo = mapa.get(chave);
+            grupo.lotes.push(item);
+            grupo.totalEstoque += item.estoqueAtualNum || 0;
+            grupo.numLotes++;
+
+            if (item.dataValidade) {
+                if (!grupo.validadeProxima || item.dataValidade < grupo.validadeProxima) {
+                    grupo.validadeProxima = item.dataValidade;
+                    grupo.diasProximo = item.diasRestantes;
+                }
+            }
+        });
+
+        // Ordena os lotes dentro de cada grupo por data de validade
+        for (const grupo of mapa.values()) {
+            grupo.lotes.sort((a, b) => a.dataValidade - b.dataValidade);
+        }
+
+        return Array.from(mapa.values());
+    }
+
     function aplicarFiltroValidade() {
         const termo = document.getElementById('buscaValidade').value.trim().toLowerCase();
         const termoForn = document.getElementById('buscaValidadeFornecedor').value.trim().toLowerCase();
@@ -1070,14 +1125,40 @@
                 }
             });
         }
-        document.getElementById('statsValidade').innerText = `${filtrados.length} itens`;
-        paginacao.validade.dadosFiltrados = filtrados;
-        paginacao.validade.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+
+        // Agrupa se necessário
+        let dadosParaExibir;
+        if (modoAgrupadoValidade) {
+            const grupos = agruparValidades(filtrados);
+            // Aplica o filtro de status também nos grupos (se necessário)
+            if (filtroStatusValidade !== 'todos') {
+                // O filtro já foi aplicado aos itens; precisamos filtrar os grupos que não têm itens que passam?
+                // Como agrupamos apenas itens que passaram, grupos sem itens não aparecerão.
+                // Mas o grupo pode ter itens que passaram e outros não; nesse caso, a validadeProxima deve ser baseada apenas nos itens filtrados.
+                // Já está correto, pois agrupamos os itens filtrados.
+            }
+            dadosParaExibir = grupos;
+            document.getElementById('statsValidade').innerText = `${dadosParaExibir.length} produtos`;
+        } else {
+            dadosParaExibir = filtrados;
+            document.getElementById('statsValidade').innerText = `${dadosParaExibir.length} itens`;
+        }
+
+        paginacao.validade.dadosFiltrados = dadosParaExibir;
+        paginacao.validade.totalPaginas = Math.ceil(dadosParaExibir.length / ITENS_POR_PAGINA);
         paginacao.validade.paginaAtual = 1;
         renderizarValidade();
     }
 
     function renderizarValidade() {
+        if (modoAgrupadoValidade) {
+            renderizarValidadeAgrupada();
+        } else {
+            renderizarValidadeDetalhada();
+        }
+    }
+
+    function renderizarValidadeDetalhada() {
         const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.validade;
         const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
         const ordenados = ordenarDados(dadosFiltrados.slice(inicio, inicio+ITENS_POR_PAGINA), ordenacao.validade.coluna, ordenacao.validade.direcao);
@@ -1086,14 +1167,6 @@
             conteudoDiv.innerHTML = '<div class="vazio">Nenhum item.</div>';
             document.getElementById('paginacaoValidade').style.display = 'none';
             return;
-        }
-
-        function statusDoItem(dias) {
-            if (dias < 0) return { texto: 'Vencido', cor: '#6b7280' };
-            if (dias <= 7) return { texto: 'Crítico', cor: '#ef4444' };
-            if (dias <= 30) return { texto: 'Atenção', cor: '#f97316' };
-            if (dias <= 90) return { texto: 'Próximo', cor: '#eab308' };
-            return { texto: 'OK', cor: '#10b981' };
         }
 
         if (visao.validade === 'tabela') {
@@ -1129,6 +1202,7 @@
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
+            attachOrdenacao('tabela-validade', 'validade');
         } else {
             let html = `<div class="cards-view">`;
             for (const i of ordenados) {
@@ -1149,7 +1223,6 @@
             html += `</div>`;
             conteudoDiv.innerHTML = html;
         }
-        attachOrdenacao('tabela-validade', 'validade');
         if (totalPaginas > 1) {
             const pagDiv = document.getElementById('paginacaoValidade');
             pagDiv.style.display = 'flex';
@@ -1158,6 +1231,124 @@
             document.getElementById('paginacaoValidade').style.display = 'none';
         }
     }
+
+    function renderizarValidadeAgrupada() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.validade;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const grupos = ordenarDados(dadosFiltrados.slice(inicio, inicio+ITENS_POR_PAGINA), ordenacao.validade.coluna, ordenacao.validade.direcao);
+        const conteudoDiv = document.getElementById('conteudoValidade');
+        if (!grupos.length) {
+            conteudoDiv.innerHTML = '<div class="vazio">Nenhum produto.</div>';
+            document.getElementById('paginacaoValidade').style.display = 'none';
+            return;
+        }
+
+        if (visao.validade === 'tabela') {
+            let html = `<div class="tabela-wrapper"><table id="tabela-validade-agrupada"><thead>`;
+            html += `<th></th>`; // seta
+            const colunas = [
+                { chave: 'codigo', label: 'Código' },
+                { chave: 'produto', label: 'Produto' },
+                { chave: 'fornecedor', label: 'Fornecedor' },
+                { chave: 'totalEstoque', label: 'Estoque total' },
+                { chave: 'numLotes', label: 'Nº lotes' },
+                { chave: 'validadeProxima', label: 'Validade próxima' },
+                { chave: 'diasProximo', label: 'Dias' }
+            ];
+            colunas.forEach(col => {
+                html += `<th>${col.label} <span class="ordenar-btn" data-coluna="${col.chave}">⇅</span></th>`;
+            });
+            html += `</thead><tbody>`;
+            grupos.forEach((g, idx) => {
+                const st = statusDoItem(g.diasProximo);
+                html += `<tr style="border-left: 6px solid ${st.cor}; cursor:pointer;" onclick="toggleLotes(${idx})">
+                    <td><span id="seta-${idx}">▸</span></td>
+                    <td class="codigo">${g.codigo}</td>
+                    <td>${g.produto}</td>
+                    <td>${g.fornecedor}</td>
+                    <td class="qtde">${g.totalEstoque}</td>
+                    <td class="qtde">${g.numLotes}</td>
+                    <td>${g.validadeProxima ? g.validadeProxima.toLocaleDateString('pt-BR') : ''}</td>
+                    <td class="qtde">${g.diasProximo}</td>
+                </tr>`;
+                html += `<tr id="lotes-${idx}" style="display:none;">
+                    <td colspan="8" style="background:#f8fafc; padding:0;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead><tr><th>Validade</th><th>Estoque</th><th>Última compra</th><th>Qtde última compra</th><th>Dias</th><th>Status</th></tr></thead>
+                            <tbody>`;
+                g.lotes.forEach(l => {
+                    const lst = statusDoItem(l.diasRestantes);
+                    html += `<tr>
+                        <td>${l.dataValidade.toLocaleDateString('pt-BR')}</td>
+                        <td class="qtde">${l.estoqueAtual}</td>
+                        <td>${l.ultimaCompra}</td>
+                        <td class="qtde">${l.qtdeUltimaCompra}</td>
+                        <td class="qtde">${l.diasRestantes}</td>
+                        <td><span style="background:${lst.cor};color:white;padding:2px 8px;border-radius:12px;">${lst.texto}</span></td>
+                    </tr>`;
+                });
+                html += `</tbody></table></td></tr>`;
+            });
+            html += `</tbody></table></div>`;
+            conteudoDiv.innerHTML = html;
+            attachOrdenacao('tabela-validade-agrupada', 'validade');
+        } else {
+            // Cards agrupados com details
+            let html = `<div class="cards-view">`;
+            grupos.forEach((g, idx) => {
+                const st = statusDoItem(g.diasProximo);
+                html += `<div class="card-item" style="border-left-color: ${st.cor};">
+                    <div class="card-linha"><span class="label">Status:</span><span class="valor" style="background:${st.cor};color:white;padding:2px 8px;border-radius:12px;">${st.texto}</span></div>
+                    <div class="card-linha"><span class="label">Código:</span><span class="valor">${g.codigo}</span></div>
+                    <div class="card-linha"><span class="label">Produto:</span><span class="valor">${g.produto}</span></div>
+                    <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${g.fornecedor}</span></div>
+                    <div class="card-linha"><span class="label">Estoque total:</span><span class="valor">${g.totalEstoque}</span></div>
+                    <div class="card-linha"><span class="label">Nº lotes:</span><span class="valor">${g.numLotes}</span></div>
+                    <div class="card-linha"><span class="label">Validade próxima:</span><span class="valor">${g.validadeProxima ? g.validadeProxima.toLocaleDateString('pt-BR') : ''}</span></div>
+                    <div class="card-linha"><span class="label">Dias restantes:</span><span class="valor">${g.diasProximo}</span></div>
+                    <details>
+                        <summary>Ver lotes (${g.numLotes})</summary>
+                        <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+                            <thead><tr><th>Validade</th><th>Estoque</th><th>Última compra</th><th>Qtde</th><th>Dias</th></tr></thead>
+                            <tbody>`;
+                g.lotes.forEach(l => {
+                    html += `<tr>
+                        <td>${l.dataValidade.toLocaleDateString('pt-BR')}</td>
+                        <td class="qtde">${l.estoqueAtual}</td>
+                        <td>${l.ultimaCompra}</td>
+                        <td class="qtde">${l.qtdeUltimaCompra}</td>
+                        <td class="qtde">${l.diasRestantes}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></details></div>`;
+            });
+            html += `</div>`;
+            conteudoDiv.innerHTML = html;
+        }
+
+        if (totalPaginas > 1) {
+            const pagDiv = document.getElementById('paginacaoValidade');
+            pagDiv.style.display = 'flex';
+            pagDiv.innerHTML = gerarBotoesPaginacao(paginaAtual, totalPaginas, 'validade');
+        } else {
+            document.getElementById('paginacaoValidade').style.display = 'none';
+        }
+    }
+
+    // Função global para expandir/recolher linha de lotes (tabela agrupada)
+    window.toggleLotes = function(idx) {
+        const linha = document.getElementById(`lotes-${idx}`);
+        const seta = document.getElementById(`seta-${idx}`);
+        if (linha && seta) {
+            if (linha.style.display === 'none') {
+                linha.style.display = 'table-row';
+                seta.textContent = '▾';
+            } else {
+                linha.style.display = 'none';
+                seta.textContent = '▸';
+            }
+        }
+    };
 
     // ==================== FUNÇÕES GLOBAIS ====================
     function attachQrEvents() {
@@ -1229,6 +1420,13 @@
     document.getElementById('btnVisaoAnalise').addEventListener('click', () => alternarVisao('analise'));
     document.getElementById('btnVisaoValidade').addEventListener('click', () => alternarVisao('validade'));
 
+    // Botão de alternância do modo agrupado
+    document.getElementById('btnModoValidade').addEventListener('click', () => {
+        modoAgrupadoValidade = !modoAgrupadoValidade;
+        document.getElementById('btnModoValidade').textContent = modoAgrupadoValidade ? '🗂️ Modo: Agrupado' : '📋 Modo: Detalhado';
+        aplicarFiltroValidade();
+    });
+
     document.getElementById('buscaCodBalanca').addEventListener('input', aplicarFiltroCodBalanca);
     document.getElementById('buscaEstoque').addEventListener('input', aplicarFiltroEstoque);
     document.getElementById('buscaEstoqueFornecedor').addEventListener('input', aplicarFiltroEstoque);
@@ -1297,7 +1495,7 @@
 
     abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
 
-    // Restaurar preferências de visão
+    // Restaurar preferências
     for (const aba of ['codbalanca', 'estoque', 'analise', 'validade']) {
         const saved = localStorage.getItem(`visao_${aba}`);
         if (saved === 'tabela' || saved === 'cards') visao[aba] = saved;
