@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>📊 Gestão de Setor</title>
     <style>
-        /* ===== ESTILOS ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
@@ -523,18 +522,17 @@
 
 <script>
     // ==================== CONFIGURAÇÕES ====================
-    const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
     const SHEET_CODBALANCA = 'CodBalanca';
     const SHEET_ESTOQUE = 'EstoqueVirtual';
     const SHEET_ATUALIZADA = 'Atualizada';
     const SHEET_VALIDADE = 'Validade';
 
-    // 🔥 SUBSTITUA PELA URL DO SEU APPS SCRIPT (APÓS REIMPLANTAR)
+    // 🔥 SUA URL DO APPS SCRIPT (JÁ ATUALIZADA)
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyEmZ6lPvdJzhTA_JmD6iuQLLf3-q4Shp5hyJhWcmHS48o3Lt7JSX_mS4cj0tMg0y3W/exec';
 
     // ==================== FUNÇÕES DE API ====================
     async function apiGet(sheetName) {
-        const url = `GASURL?sheet={encodeURIComponent(sheetName)}`;
+        const url = `${GAS_URL}?sheet=${encodeURIComponent(sheetName)}`;
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const json = await resp.json();
@@ -769,7 +767,6 @@
                 ...item,
                 Estoque: novoValor
             };
-            // Envia para a API com a aba correta
             await apiPost('update', dadosAtualizados, codigo, 'EstoqueVirtual');
             await carregarEstoque();
             mostrarToast(`✅ Estoque do código ${codigo} atualizado para ${novoValor}`);
@@ -811,7 +808,7 @@
             let html = `<div class="tabela-wrapper"><table id="tabela-codbalanca"><thead><th>Balança <span class="ordenar-btn" data-coluna="Balanca">⇅</span></th><th>Código <span class="ordenar-btn" data-coluna="Cod">⇅</span></th><th>Produto <span class="ordenar-btn" data-coluna="Produto">⇅</span></th><th>QR</th></thead><tbody>`;
             for (const i of ordenados) {
                 const balanca = i['Balanca'] || '';
-                html += `<tr><td class="codigo">balanca</td><tdclass="codigo">{i['Cod'] || ''}</td><td>i['Produto']||''</td><td><buttonclass="btn-qr"data-valor="{balanca}">📷 QR</button></td></tr>`;
+                html += `<tr><td class="codigo">${balanca}</td><td class="codigo">${i['Cod'] || ''}</td><td>${i['Produto'] || ''}</td><td><button class="btn-qr" data-valor="${balanca}">📷 QR</button></td></tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -819,7 +816,7 @@
             let html = `<div class="cards-view">`;
             for (const i of ordenados) {
                 const balanca = i['Balanca'] || '';
-                html += `<div class="card-item"><div class="card-linha"><span class="label">Balança:</span><span class="valor">balanca</span></div><divclass="card-linha"><spanclass="label">Código:</span><spanclass="valor">{i['Cod'] || ''}</span></div><div class="card-linha"><span class="label">Produto:</span><span class="valor">i['Produto']||''</span></div><buttonclass="btn-qr"data-valor="{balanca}">📷 Gerar QR</button></div>`;
+                html += `<div class="card-item"><div class="card-linha"><span class="label">Balança:</span><span class="valor">${balanca}</span></div><div class="card-linha"><span class="label">Código:</span><span class="valor">${i['Cod'] || ''}</span></div><div class="card-linha"><span class="label">Produto:</span><span class="valor">${i['Produto'] || ''}</span></div><button class="btn-qr" data-valor="${balanca}">📷 Gerar QR</button></div>`;
             }
             html += `</div>`;
             conteudoDiv.innerHTML = html;
@@ -875,7 +872,7 @@
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
                 const qrValor = (i['Codigo'] || '') + '0001';
-                html += `<tr class="classe"><tdclass="codigo">{i['Codigo'] || ''}</td><td>i['Nome']||''</td><tdclass="qtde"id="estoque-{i['Codigo']}">estoque</td><tdclass="qtde">{i['Dias sem venda'] || ''}</td><td>i['Últimavenda']||''</td><td>{i['Última Compra'] || ''}</td><td>i['Fornecedor']||''</td><td><buttonclass="btn-qr"data-valor="{qrValor}">📷 QR</button> <button class="btn-editar" onclick="abrirModalEditarEstoque('${i['Codigo']}')">✏️</button></td></tr>`;
+                html += `<tr class="${classe}"><td class="codigo">${i['Codigo'] || ''}</td><td>${i['Nome'] || ''}</td><td class="qtde" id="estoque-${i['Codigo']}">${estoque}</td><td class="qtde">${i['Dias sem venda'] || ''}</td><td>${i['Última venda'] || ''}</td><td>${i['Última Compra'] || ''}</td><td>${i['Fornecedor'] || ''}</td><td><button class="btn-qr" data-valor="${qrValor}">📷 QR</button> <button class="btn-editar" onclick="abrirModalEditarEstoque('${i['Codigo']}')">✏️</button></td></tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -887,7 +884,7 @@
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
                 const qrValor = (i['Codigo'] || '') + '0001';
-                html += `<div class="card-item classe"><divclass="card-linha"><spanclass="label">Código:</span><spanclass="valor">{i['Codigo'] || ''}</span></div><div class="card-linha"><span class="label">Nome:</span><span class="valor">i['Nome']||''</span></div><divclass="card-linha"><spanclass="label">Estoque:</span><spanclass="valor">{estoque}</span></div><div class="card-linha"><span class="label">Dias sem venda:</span><span class="valor">i['Diassemvenda']||''</span></div><divclass="card-linha"><spanclass="label">Últimavenda:</span><spanclass="valor">{i['Última venda'] || ''}</span></div><div class="card-linha"><span class="label">Última Compra:</span><span class="valor">i['ÚltimaCompra']||''</span></div><divclass="card-linha"><spanclass="label">Fornecedor:</span><spanclass="valor">{i['Fornecedor'] || ''}</span></div><button class="btn-qr" data-valor="qrValor">📷GerarQR</button><buttonclass="btn-editar"onclick="abrirModalEditarEstoque('{i['Codigo']}')">✏️ Editar</button></div>`;
+                html += `<div class="card-item ${classe}"><div class="card-linha"><span class="label">Código:</span><span class="valor">${i['Codigo'] || ''}</span></div><div class="card-linha"><span class="label">Nome:</span><span class="valor">${i['Nome'] || ''}</span></div><div class="card-linha"><span class="label">Estoque:</span><span class="valor">${estoque}</span></div><div class="card-linha"><span class="label">Dias sem venda:</span><span class="valor">${i['Dias sem venda'] || ''}</span></div><div class="card-linha"><span class="label">Última venda:</span><span class="valor">${i['Última venda'] || ''}</span></div><div class="card-linha"><span class="label">Última Compra:</span><span class="valor">${i['Última Compra'] || ''}</span></div><div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${i['Fornecedor'] || ''}</span></div><button class="btn-qr" data-valor="${qrValor}">📷 Gerar QR</button> <button class="btn-editar" onclick="abrirModalEditarEstoque('${i['Codigo']}')">✏️ Editar</button></div>`;
             }
             html += `</div>`;
             conteudoDiv.innerHTML = html;
@@ -1007,7 +1004,7 @@
                 motivo = `Dias sem venda: ${diasSemVenda}`;
             } else if (diasUltimaCompra !== null && diasUltimaCompra > 180) {
                 sugestao = '⚠️ Última compra antiga';
-                motivo = `Última compra: ultimaCompraStr({diasUltimaCompra} dias)`;
+                motivo = `Última compra: ${ultimaCompraStr} (${diasUltimaCompra} dias)`;
             } else if (estoque === 0 && diasSemVenda > 30) {
                 sugestao = 'ℹ️ Sem estoque, mas com venda há mais de 30 dias';
                 motivo = `Dias sem venda: ${diasSemVenda}`;
@@ -1051,7 +1048,7 @@
             let html = `<div class="tabela-wrapper"><table id="tabela-analise"><thead>`;
             for (const col of todasColunasAnalise) {
                 if (colunasVisiveis.includes(col.campo)) {
-                    html += `<th>col.label<spanclass="ordenar-btn"data-coluna="{col.campo}">⇅</span></th>`;
+                    html += `<th>${col.label} <span class="ordenar-btn" data-coluna="${col.campo}">⇅</span></th>`;
                 }
             }
             html += `<th>QR</th></thead><tbody>`;
@@ -1076,7 +1073,7 @@
                 html += `<div class="card-item ${a.sugestao !== 'OK' ? 'negativo' : ''}">`;
                 for (const col of todasColunasAnalise) {
                     if (colunasVisiveis.includes(col.campo)) {
-                        html += `<div class="card-linha"><span class="label">col.label:</span><spanclass="valor">{a[col.campo]}</span></div>`;
+                        html += `<div class="card-linha"><span class="label">${col.label}:</span><span class="valor">${a[col.campo]}</span></div>`;
                     }
                 }
                 if (a.sugestao !== 'OK' && a.motivo && !colunasVisiveis.includes('motivo')) {
@@ -1167,7 +1164,7 @@
                 }
             });
         }
-        let dadosParaExibir;                    
+        let dadosParaExibir;
         if (modoAgrupadoValidade) {
             const grupos = agruparValidades(filtrados);
             dadosParaExibir = grupos;
@@ -1201,7 +1198,7 @@
             let html = `<div class="tabela-wrapper"><table id="tabela-validade"><thead><th>Validade <span class="ordenar-btn" data-coluna="dataValidade">⇅</span></th><th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th><th>Produto <span class="ordenar-btn" data-coluna="produto">⇅</span></th><th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th><th>Locais <span class="ordenar-btn" data-coluna="locais">⇅</span></th><th>Estoque atual <span class="ordenar-btn" data-coluna="estoqueAtual">⇅</span></th><th>Dias restantes <span class="ordenar-btn" data-coluna="diasRestantes">⇅</span></th><th>Última compra <span class="ordenar-btn" data-coluna="ultimaCompra">⇅</span></th><th>Qtde. última compra <span class="ordenar-btn" data-coluna="qtdeUltimaCompra">⇅</span></th></thead><tbody>`;
             for (const i of ordenados) {
                 const st = statusDoItem(i.diasRestantes);
-                html += `<tr style="border-left: 6px solid st.cor;"><td>{i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</td><td class="codigo">i.codigo</td><td>{i.produto}</td><td>i.fornecedor</td><td>{i.locais}</td><td class="qtde">i.estoqueAtual</td><tdclass="qtde">{i.diasRestantes}</td><td>i.ultimaCompra</td><tdclass="qtde">{i.qtdeUltimaCompra}</td></tr>`;
+                html += `<tr style="border-left: 6px solid ${st.cor};"><td>${i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</td><td class="codigo">${i.codigo}</td><td>${i.produto}</td><td>${i.fornecedor}</td><td>${i.locais}</td><td class="qtde">${i.estoqueAtual}</td><td class="qtde">${i.diasRestantes}</td><td>${i.ultimaCompra}</td><td class="qtde">${i.qtdeUltimaCompra}</td></tr>`;
             }
             html += `</tbody></table></div>`;
             conteudoDiv.innerHTML = html;
@@ -1210,7 +1207,7 @@
             let html = `<div class="cards-view">`;
             for (const i of ordenados) {
                 const st = statusDoItem(i.diasRestantes);
-                html += `<div class="card-item" style="border-left-color: st.cor;"><divclass="card-linha"><spanclass="label">Status:</span><spanclass="valor"style="background:{st.cor};color:white;padding:2px 8px;border-radius:12px;">st.texto</span></div><divclass="card-linha"><spanclass="label">Validade:</span><spanclass="valor">{i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</span></div><div class="card-linha"><span class="label">Código:</span><span class="valor">i.codigo</span></div><divclass="card-linha"><spanclass="label">Produto:</span><spanclass="valor">{i.produto}</span></div><div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">i.fornecedor</span></div><divclass="card-linha"><spanclass="label">Locais:</span><spanclass="valor">{i.locais}</span></div><div class="card-linha"><span class="label">Estoque atual:</span><span class="valor">i.estoqueAtual</span></div><divclass="card-linha"><spanclass="label">Diasrestantes:</span><spanclass="valor">{i.diasRestantes}</span></div><div class="card-linha"><span class="label">Última compra:</span><span class="valor">i.ultimaCompra</span></div><divclass="card-linha"><spanclass="label">Qtde.últimacompra:</span><spanclass="valor">{i.qtdeUltimaCompra}</span></div></div>`;
+                html += `<div class="card-item" style="border-left-color: ${st.cor};"><div class="card-linha"><span class="label">Status:</span><span class="valor" style="background:${st.cor};color:white;padding:2px 8px;border-radius:12px;">${st.texto}</span></div><div class="card-linha"><span class="label">Validade:</span><span class="valor">${i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</span></div><div class="card-linha"><span class="label">Código:</span><span class="valor">${i.codigo}</span></div><div class="card-linha"><span class="label">Produto:</span><span class="valor">${i.produto}</span></div><div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${i.fornecedor}</span></div><div class="card-linha"><span class="label">Locais:</span><span class="valor">${i.locais}</span></div><div class="card-linha"><span class="label">Estoque atual:</span><span class="valor">${i.estoqueAtual}</span></div><div class="card-linha"><span class="label">Dias restantes:</span><span class="valor">${i.diasRestantes}</span></div><div class="card-linha"><span class="label">Última compra:</span><span class="valor">${i.ultimaCompra}</span></div><div class="card-linha"><span class="label">Qtde. última compra:</span><span class="valor">${i.qtdeUltimaCompra}</span></div></div>`;
             }
             html += `</div>`;
             conteudoDiv.innerHTML = html;
@@ -1236,11 +1233,11 @@
             let html = `<div class="tabela-wrapper"><table id="tabela-validade-agrupada"><thead><th></th><th>Código <span class="ordenar-btn" data-coluna="codigo">⇅</span></th><th>Produto <span class="ordenar-btn" data-coluna="produto">⇅</span></th><th>Fornecedor <span class="ordenar-btn" data-coluna="fornecedor">⇅</span></th><th>Estoque total <span class="ordenar-btn" data-coluna="totalEstoque">⇅</span></th><th>Nº lotes <span class="ordenar-btn" data-coluna="numLotes">⇅</span></th><th>Validade próxima <span class="ordenar-btn" data-coluna="validadeProxima">⇅</span></th><th>Dias <span class="ordenar-btn" data-coluna="diasProximo">⇅</span></th></thead><tbody>`;
             grupos.forEach((g, idx) => {
                 const st = statusDoItem(g.diasProximo);
-                html += `<tr style="border-left: 6px solid st.cor;cursor:pointer;"onclick="toggleLotes({idx})"><td><span id="seta-idx">▸</span></td><tdclass="codigo">{g.codigo}</td><td>g.produto</td><td>{g.fornecedor}</td><td class="qtde">g.totalEstoque</td><tdclass="qtde">{g.numLotes}</td><td>g.validadeProxima?g.validadeProxima.toLocaleDateString('pt-BR'):''</td><tdclass="qtde">{g.diasProximo}</td></tr>`;
+                html += `<tr style="border-left: 6px solid ${st.cor}; cursor:pointer;" onclick="toggleLotes(${idx})"><td><span id="seta-${idx}">▸</span></td><td class="codigo">${g.codigo}</td><td>${g.produto}</td><td>${g.fornecedor}</td><td class="qtde">${g.totalEstoque}</td><td class="qtde">${g.numLotes}</td><td>${g.validadeProxima ? g.validadeProxima.toLocaleDateString('pt-BR') : ''}</td><td class="qtde">${g.diasProximo}</td></tr>`;
                 html += `<tr id="lotes-${idx}" style="display:none;"><td colspan="8" style="background:#f8fafc; padding:0;"><table style="width:100%; border-collapse:collapse;"><thead><tr><th>Validade</th><th>Estoque</th><th>Última compra</th><th>Qtde última compra</th><th>Dias</th><th>Status</th></tr></thead><tbody>`;
                 g.lotes.forEach(l => {
                     const lst = statusDoItem(l.diasRestantes);
-                    html += `<tr><td>l.dataValidade.toLocaleDateString('pt-BR')</td><tdclass="qtde">{l.estoqueAtual}</td><td>l.ultimaCompra</td><tdclass="qtde">{l.qtdeUltimaCompra}</td><td class="qtde">l.diasRestantes</td><td><spanstyle="background:{lst.cor};color:white;padding:2px 8px;border-radius:12px;">${lst.texto}</span></td></tr>`;
+                    html += `<tr><td>${l.dataValidade.toLocaleDateString('pt-BR')}</td><td class="qtde">${l.estoqueAtual}</td><td>${l.ultimaCompra}</td><td class="qtde">${l.qtdeUltimaCompra}</td><td class="qtde">${l.diasRestantes}</td><td><span style="background:${lst.cor};color:white;padding:2px 8px;border-radius:12px;">${lst.texto}</span></td></tr>`;
                 });
                 html += `</tbody></table></td></tr>`;
             });
@@ -1251,9 +1248,9 @@
             let html = `<div class="cards-view">`;
             grupos.forEach((g, idx) => {
                 const st = statusDoItem(g.diasProximo);
-                html += `<div class="card-item" style="border-left-color: st.cor;"><divclass="card-linha"><spanclass="label">Status:</span><spanclass="valor"style="background:{st.cor};color:white;padding:2px 8px;border-radius:12px;">st.texto</span></div><divclass="card-linha"><spanclass="label">Código:</span><spanclass="valor">{g.codigo}</span></div><div class="card-linha"><span class="label">Produto:</span><span class="valor">g.produto</span></div><divclass="card-linha"><spanclass="label">Fornecedor:</span><spanclass="valor">{g.fornecedor}</span></div><div class="card-linha"><span class="label">Estoque total:</span><span class="valor">g.totalEstoque</span></div><divclass="card-linha"><spanclass="label">Nºlotes:</span><spanclass="valor">{g.numLotes}</span></div><div class="card-linha"><span class="label">Validade próxima:</span><span class="valor">g.validadeProxima?g.validadeProxima.toLocaleDateString('pt-BR'):''</span></div><divclass="card-linha"><spanclass="label">Diasrestantes:</span><spanclass="valor">{g.diasProximo}</span></div><details><summary>Ver lotes (${g.numLotes})</summary><table style="width:100%; border-collapse:collapse; margin-top:8px;"><thead><tr><th>Validade</th><th>Estoque</th><th>Última compra</th><th>Qtde</th><th>Dias</th></tr></thead><tbody>`;
+                html += `<div class="card-item" style="border-left-color: ${st.cor};"><div class="card-linha"><span class="label">Status:</span><span class="valor" style="background:${st.cor};color:white;padding:2px 8px;border-radius:12px;">${st.texto}</span></div><div class="card-linha"><span class="label">Código:</span><span class="valor">${g.codigo}</span></div><div class="card-linha"><span class="label">Produto:</span><span class="valor">${g.produto}</span></div><div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${g.fornecedor}</span></div><div class="card-linha"><span class="label">Estoque total:</span><span class="valor">${g.totalEstoque}</span></div><div class="card-linha"><span class="label">Nº lotes:</span><span class="valor">${g.numLotes}</span></div><div class="card-linha"><span class="label">Validade próxima:</span><span class="valor">${g.validadeProxima ? g.validadeProxima.toLocaleDateString('pt-BR') : ''}</span></div><div class="card-linha"><span class="label">Dias restantes:</span><span class="valor">${g.diasProximo}</span></div><details><summary>Ver lotes (${g.numLotes})</summary><table style="width:100%; border-collapse:collapse; margin-top:8px;"><thead><tr><th>Validade</th><th>Estoque</th><th>Última compra</th><th>Qtde</th><th>Dias</th></tr></thead><tbody>`;
                 g.lotes.forEach(l => {
-                    html += `<tr><td>l.dataValidade.toLocaleDateString('pt-BR')</td><tdclass="qtde">{l.estoqueAtual}</td><td>l.ultimaCompra</td><tdclass="qtde">{l.qtdeUltimaCompra}</td><td class="qtde">${l.diasRestantes}</td></tr>`;
+                    html += `<tr><td>${l.dataValidade.toLocaleDateString('pt-BR')}</td><td class="qtde">${l.estoqueAtual}</td><td>${l.ultimaCompra}</td><td class="qtde">${l.qtdeUltimaCompra}</td><td class="qtde">${l.diasRestantes}</td></tr>`;
                 });
                 html += `</tbody></table></details></div>`;
             });
@@ -1306,7 +1303,7 @@
         let botoes = '';
         for (let i = 1; i <= totalPaginas; i++) {
             if (i === 1 || i === totalPaginas || (i >= paginaAtual - 2 && i <= paginaAtual + 2)) {
-                botoes += `<button class="pag-btn i===paginaAtual?'ativo':''"data-pagina="{i}" data-aba="aba">{i}</button>`;
+                botoes += `<button class="pag-btn ${i === paginaAtual ? 'ativo' : ''}" data-pagina="${i}" data-aba="${aba}">${i}</button>`;
             } else if (i === paginaAtual - 3 || i === paginaAtual + 3) {
                 botoes += `<span>...</span>`;
             }
@@ -1446,4 +1443,3 @@
 </script>
 </body>
 </html>
-
