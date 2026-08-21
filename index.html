@@ -379,6 +379,7 @@
         <button class="aba-btn ativo" data-aba="codbalanca">⚖️ Código x Balança</button>
         <button class="aba-btn" data-aba="estoquevirtual">📦 Estoque Virtual</button>
         <button class="aba-btn" data-aba="analise">📉 Análise de Estoque</button>
+        <button class="aba-btn" data-aba="validade">📅 Validade</button>
     </div>
 
     <!-- ABA CÓDIGO X BALANÇA -->
@@ -431,6 +432,28 @@
         <div id="conteudoAnalise"></div>
         <div id="paginacaoAnalise" class="paginacao" style="display: none;"></div>
     </div>
+
+    <!-- ABA VALIDADE -->
+    <div id="aba-validade" class="conteudo-aba">
+        <div class="filtros">
+            <div class="filtros-top">
+                <div><label>🔍 Buscar por Código ou Produto</label><input type="text" id="buscaValidade" placeholder="Ex: 1103789, IOG"></div>
+                <div><label>🏢 Fornecedor</label><input type="text" id="buscaValidadeFornecedor" placeholder="Ex: SEARA"></div>
+                <div class="stats" id="statsValidade">0 itens</div>
+            </div>
+            <div class="filtros-botoes">
+                <button id="btnVisaoValidade" class="btn-acao">🃏 Ver como Cards</button>
+                <button class="btn-acao filtro-status" data-status="todos">Todos</button>
+                <button class="btn-acao filtro-status" data-status="vencidos">Vencidos</button>
+                <button class="btn-acao filtro-status" data-status="criticos">Críticos (≤7d)</button>
+                <button class="btn-acao filtro-status" data-status="atencao">Atenção (≤30d)</button>
+                <button class="btn-acao filtro-status" data-status="proximos">Próximos (≤90d)</button>
+            </div>
+        </div>
+        <div id="statusValidade" class="carregando">Carregando dados...</div>
+        <div id="conteudoValidade"></div>
+        <div id="paginacaoValidade" class="paginacao" style="display: none;"></div>
+    </div>
 </div>
 
 <!-- Modal QR -->
@@ -458,13 +481,16 @@
     const SHEET_CODBALANCA = 'CodBalanca';
     const SHEET_ESTOQUE = 'EstoqueVirtual';
     const SHEET_ATUALIZADA = 'Atualizada';
+    const SHEET_VALIDADE = 'Validade';
 
     const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
     const URL_ESTOQUE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ESTOQUE}`;
     const URL_ATUALIZADA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ATUALIZADA}`;
+    const URL_VALIDADE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_VALIDADE}`;
 
     let dadosCodBalanca = [];
     let dadosEstoque = [];
+    let dadosValidade = [];
     let ultimaAtualizacao = new Date();
 
     let mapasGlobal = {
@@ -476,21 +502,26 @@
     let ordenacao = {
         codbalanca: { coluna: 'Balanca', direcao: 'asc' },
         estoque: { coluna: null, direcao: 'asc' },
-        analise: { coluna: null, direcao: 'asc' }
+        analise: { coluna: null, direcao: 'asc' },
+        validade: { coluna: 'dataValidade', direcao: 'asc' }
     };
 
     let visao = {
         codbalanca: 'tabela',
         estoque: 'tabela',
-        analise: 'tabela'
+        analise: 'tabela',
+        validade: 'tabela'
     };
 
     const ITENS_POR_PAGINA = 100;
     let paginacao = {
         codbalanca: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
         estoque: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
-        analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
+        analise: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] },
+        validade: { paginaAtual: 1, totalPaginas: 1, dadosFiltrados: [] }
     };
+
+    let filtroStatusValidade = 'todos';
 
     // Elementos DOM
     const topoDataDiv = document.getElementById('topoData');
@@ -498,7 +529,8 @@
     const conteudos = {
         codbalanca: document.getElementById('aba-codbalanca'),
         estoquevirtual: document.getElementById('aba-estoquevirtual'),
-        analise: document.getElementById('aba-analise')
+        analise: document.getElementById('aba-analise'),
+        validade: document.getElementById('aba-validade')
     };
     const globalSearch = document.getElementById('globalSearch');
     const limiteEstoqueInput = document.getElementById('limiteEstoque');
@@ -524,27 +556,32 @@
     }
 
     function ordenarDados(dados, coluna, direcao) {
-    if (!coluna) return dados;
-    return [...dados].sort((a, b) => {
-        let valA = a[coluna] !== undefined ? a[coluna] : '';
-        let valB = b[coluna] !== undefined ? b[coluna] : '';
+        if (!coluna) return dados;
+        return [...dados].sort((a, b) => {
+            let valA = a[coluna] !== undefined ? a[coluna] : '';
+            let valB = b[coluna] !== undefined ? b[coluna] : '';
 
-        // Tenta converter ambos para número
-        const numA = typeof valA === 'number' ? valA : normalizarNumero(valA);
-        const numB = typeof valB === 'number' ? valB : normalizarNumero(valB);
-        const isNumA = !isNaN(numA) && isFinite(numA);
-        const isNumB = !isNaN(numB) && isFinite(numB);
+            // Se ambos são Date, compara timestamps
+            if (valA instanceof Date && valB instanceof Date) {
+                return direcao === 'asc' ? valA - valB : valB - valA;
+            }
 
-        if (isNumA && isNumB) {
-            return direcao === 'asc' ? numA - numB : numB - numA;
-        } else {
-            // Se não forem números, compara como string
-            valA = valA.toString().toLowerCase();
-            valB = valB.toString().toLowerCase();
-            return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-    });
-}
+            // Tenta converter ambos para número
+            const numA = typeof valA === 'number' ? valA : normalizarNumero(valA);
+            const numB = typeof valB === 'number' ? valB : normalizarNumero(valB);
+            const isNumA = !isNaN(numA) && isFinite(numA);
+            const isNumB = !isNaN(numB) && isFinite(numB);
+
+            if (isNumA && isNumB) {
+                return direcao === 'asc' ? numA - numB : numB - numA;
+            } else {
+                // Se não forem números, compara como string
+                valA = valA.toString().toLowerCase();
+                valB = valB.toString().toLowerCase();
+                return direcao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+        });
+    }
 
     function atualizarMapasEstoque() {
         mapasGlobal.fornecedor.clear();
@@ -594,25 +631,55 @@
     }
 
     async function carregarEstoque() {
-    try {
-        const resp = await fetch(URL_ESTOQUE);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        // Converte campos numéricos para número
-        dadosEstoque = data.map(item => ({
-            ...item,
-            Estoque: normalizarNumero(item['Estoque']),
-            'Dias sem venda': normalizarNumero(item['Dias sem venda']),
-            'Codigo': item['Codigo']?.toString() || ''
-        }));
-        atualizarMapasEstoque();
-        aplicarFiltroEstoque();
-        atualizarDashboard();
-        document.getElementById('statusEstoque').style.display = 'none';
-    } catch (err) {
-        document.getElementById('statusEstoque').innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+        try {
+            const resp = await fetch(URL_ESTOQUE);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            dadosEstoque = data.map(item => ({
+                ...item,
+                Estoque: normalizarNumero(item['Estoque']),
+                'Dias sem venda': normalizarNumero(item['Dias sem venda']),
+                'Codigo': item['Codigo']?.toString() || ''
+            }));
+            atualizarMapasEstoque();
+            aplicarFiltroEstoque();
+            atualizarDashboard();
+            document.getElementById('statusEstoque').style.display = 'none';
+        } catch (err) {
+            document.getElementById('statusEstoque').innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+        }
     }
-}
+
+    async function carregarValidade() {
+        try {
+            const resp = await fetch(URL_VALIDADE);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            dadosValidade = data.map(item => {
+                const dataValidade = parseDataBrasil(item['Data de validade']);
+                const diasRestantes = dataValidade ? Math.ceil((dataValidade - hoje) / (1000*60*60*24)) : null;
+                return {
+                    codigo: item['Código']?.toString() || '',
+                    produto: item['Produto'] || '',
+                    fornecedor: item['Fornecedor'] || '',
+                    locais: item['Locais'] || '',
+                    estoqueAtual: item['Estoque atual'] || '',
+                    estoqueAtualNum: normalizarNumero(item['Estoque atual']),
+                    dataValidade: dataValidade,
+                    dataValidadeStr: item['Data de validade'] || '',
+                    diasRestantes: diasRestantes,
+                    ultimaCompra: item['Última compra'] || '',
+                    qtdeUltimaCompra: item['Qtde. última compra'] || ''
+                };
+            }).filter(item => item.dataValidade !== null);
+            aplicarFiltroValidade();
+            document.getElementById('statusValidade').style.display = 'none';
+        } catch (err) {
+            document.getElementById('statusValidade').innerHTML = `<div class="erro">❌ Erro: ${err.message}</div>`;
+        }
+    }
 
     async function carregarAnalise() {
         if (dadosEstoque.length === 0) await carregarEstoque();
@@ -734,7 +801,7 @@
             });
             html += `</thead><tbody>`;
             for (const i of ordenados) {
-                const estoque = i['Estoque']; // já é número
+                const estoque = i['Estoque'];
                 let classe = '';
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
@@ -755,7 +822,7 @@
         } else {
             let html = `<div class="cards-view">`;
             for (const i of ordenados) {
-                const estoque = i['Estoque']; // já é número
+                const estoque = i['Estoque'];
                 let classe = '';
                 if (estoque === 0) classe = 'negativo';
                 else if (estoque < limite) classe = 'estoque-baixo';
@@ -973,6 +1040,125 @@
         } else document.getElementById('paginacaoAnalise').style.display = 'none';
     }
 
+    // ==================== ABA VALIDADE ====================
+    function aplicarFiltroValidade() {
+        const termo = document.getElementById('buscaValidade').value.trim().toLowerCase();
+        const termoForn = document.getElementById('buscaValidadeFornecedor').value.trim().toLowerCase();
+        let filtrados = dadosValidade;
+        if (termo || termoForn) {
+            filtrados = filtrados.filter(i => {
+                const cod = i.codigo.toLowerCase();
+                const prod = i.produto.toLowerCase();
+                const forn = i.fornecedor.toLowerCase();
+                let match = true;
+                if (termo) match = match && (cod.includes(termo) || prod.includes(termo));
+                if (termoForn) match = match && forn.includes(termoForn);
+                return match;
+            });
+        }
+        // Aplicar filtro de status
+        if (filtroStatusValidade !== 'todos') {
+            filtrados = filtrados.filter(i => {
+                const d = i.diasRestantes;
+                if (d === null) return false;
+                switch(filtroStatusValidade) {
+                    case 'vencidos': return d < 0;
+                    case 'criticos': return d >= 0 && d <= 7;
+                    case 'atencao': return d >= 8 && d <= 30;
+                    case 'proximos': return d >= 31 && d <= 90;
+                    default: return true;
+                }
+            });
+        }
+        document.getElementById('statsValidade').innerText = `${filtrados.length} itens`;
+        paginacao.validade.dadosFiltrados = filtrados;
+        paginacao.validade.totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
+        paginacao.validade.paginaAtual = 1;
+        renderizarValidade();
+    }
+
+    function renderizarValidade() {
+        const { dadosFiltrados, paginaAtual, totalPaginas } = paginacao.validade;
+        const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+        const ordenados = ordenarDados(dadosFiltrados.slice(inicio, inicio+ITENS_POR_PAGINA), ordenacao.validade.coluna, ordenacao.validade.direcao);
+        const conteudoDiv = document.getElementById('conteudoValidade');
+        if (!ordenados.length) {
+            conteudoDiv.innerHTML = '<div class="vazio">Nenhum item.</div>';
+            document.getElementById('paginacaoValidade').style.display = 'none';
+            return;
+        }
+
+        function statusDoItem(dias) {
+            if (dias < 0) return { texto: 'Vencido', cor: '#6b7280' };
+            if (dias <= 7) return { texto: 'Crítico', cor: '#ef4444' };
+            if (dias <= 30) return { texto: 'Atenção', cor: '#f97316' };
+            if (dias <= 90) return { texto: 'Próximo', cor: '#eab308' };
+            return { texto: 'OK', cor: '#10b981' };
+        }
+
+        if (visao.validade === 'tabela') {
+            let html = `<div class="tabela-wrapper"><table id="tabela-validade"><thead>`;
+            const colunas = [
+                { chave: 'dataValidade', label: 'Validade' },
+                { chave: 'codigo', label: 'Código' },
+                { chave: 'produto', label: 'Produto' },
+                { chave: 'fornecedor', label: 'Fornecedor' },
+                { chave: 'locais', label: 'Locais' },
+                { chave: 'estoqueAtual', label: 'Estoque atual' },
+                { chave: 'diasRestantes', label: 'Dias restantes' },
+                { chave: 'ultimaCompra', label: 'Última compra' },
+                { chave: 'qtdeUltimaCompra', label: 'Qtde. última compra' }
+            ];
+            colunas.forEach(col => {
+                html += `<th>${col.label} <span class="ordenar-btn" data-coluna="${col.chave}">⇅</span></th>`;
+            });
+            html += `</thead><tbody>`;
+            for (const i of ordenados) {
+                const st = statusDoItem(i.diasRestantes);
+                html += `<tr style="border-left: 6px solid ${st.cor};">
+                    <td>${i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</td>
+                    <td class="codigo">${i.codigo}</td>
+                    <td>${i.produto}</td>
+                    <td>${i.fornecedor}</td>
+                    <td>${i.locais}</td>
+                    <td class="qtde">${i.estoqueAtual}</td>
+                    <td class="qtde">${i.diasRestantes}</td>
+                    <td>${i.ultimaCompra}</td>
+                    <td class="qtde">${i.qtdeUltimaCompra}</td>
+                </tr>`;
+            }
+            html += `</tbody></table></div>`;
+            conteudoDiv.innerHTML = html;
+        } else {
+            let html = `<div class="cards-view">`;
+            for (const i of ordenados) {
+                const st = statusDoItem(i.diasRestantes);
+                html += `<div class="card-item" style="border-left-color: ${st.cor};">
+                    <div class="card-linha"><span class="label">Status:</span><span class="valor" style="background:${st.cor};color:white;padding:2px 8px;border-radius:12px;">${st.texto}</span></div>
+                    <div class="card-linha"><span class="label">Validade:</span><span class="valor">${i.dataValidade ? i.dataValidade.toLocaleDateString('pt-BR') : ''}</span></div>
+                    <div class="card-linha"><span class="label">Código:</span><span class="valor">${i.codigo}</span></div>
+                    <div class="card-linha"><span class="label">Produto:</span><span class="valor">${i.produto}</span></div>
+                    <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${i.fornecedor}</span></div>
+                    <div class="card-linha"><span class="label">Locais:</span><span class="valor">${i.locais}</span></div>
+                    <div class="card-linha"><span class="label">Estoque atual:</span><span class="valor">${i.estoqueAtual}</span></div>
+                    <div class="card-linha"><span class="label">Dias restantes:</span><span class="valor">${i.diasRestantes}</span></div>
+                    <div class="card-linha"><span class="label">Última compra:</span><span class="valor">${i.ultimaCompra}</span></div>
+                    <div class="card-linha"><span class="label">Qtde. última compra:</span><span class="valor">${i.qtdeUltimaCompra}</span></div>
+                </div>`;
+            }
+            html += `</div>`;
+            conteudoDiv.innerHTML = html;
+        }
+        attachOrdenacao('tabela-validade', 'validade');
+        if (totalPaginas > 1) {
+            const pagDiv = document.getElementById('paginacaoValidade');
+            pagDiv.style.display = 'flex';
+            pagDiv.innerHTML = gerarBotoesPaginacao(paginaAtual, totalPaginas, 'validade');
+        } else {
+            document.getElementById('paginacaoValidade').style.display = 'none';
+        }
+    }
+
     // ==================== FUNÇÕES GLOBAIS ====================
     function attachQrEvents() {
         document.querySelectorAll('.btn-qr').forEach(btn => {
@@ -1023,6 +1209,7 @@
                 if (aba === 'codbalanca') renderizarCodBalanca();
                 else if (aba === 'estoque') renderizarEstoque();
                 else if (aba === 'analise') renderizarAnalise();
+                else if (aba === 'validade') renderizarValidade();
             });
         });
     }
@@ -1033,17 +1220,30 @@
         if (aba === 'codbalanca') renderizarCodBalanca();
         else if (aba === 'estoque') renderizarEstoque();
         else if (aba === 'analise') renderizarAnalise();
+        else if (aba === 'validade') renderizarValidade();
     }
 
+    // Event listeners
     document.getElementById('btnVisaoCodBalanca').addEventListener('click', () => alternarVisao('codbalanca'));
     document.getElementById('btnVisaoEstoque').addEventListener('click', () => alternarVisao('estoque'));
     document.getElementById('btnVisaoAnalise').addEventListener('click', () => alternarVisao('analise'));
+    document.getElementById('btnVisaoValidade').addEventListener('click', () => alternarVisao('validade'));
 
     document.getElementById('buscaCodBalanca').addEventListener('input', aplicarFiltroCodBalanca);
     document.getElementById('buscaEstoque').addEventListener('input', aplicarFiltroEstoque);
     document.getElementById('buscaEstoqueFornecedor').addEventListener('input', aplicarFiltroEstoque);
     document.getElementById('buscaAnalise').addEventListener('input', aplicarFiltroAnalise);
     document.getElementById('buscaAnaliseFornecedor').addEventListener('input', aplicarFiltroAnalise);
+    document.getElementById('buscaValidade').addEventListener('input', aplicarFiltroValidade);
+    document.getElementById('buscaValidadeFornecedor').addEventListener('input', aplicarFiltroValidade);
+
+    document.querySelectorAll('.filtro-status').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            filtroStatusValidade = e.target.dataset.status;
+            aplicarFiltroValidade();
+        });
+    });
+
     document.getElementById('btnConfigColunas').addEventListener('click', abrirModalColunas);
     document.getElementById('fecharModal').addEventListener('click', fecharModalColunas);
     document.getElementById('salvarColunas').addEventListener('click', salvarColunasModal);
@@ -1057,6 +1257,7 @@
                 if (aba === 'codbalanca') renderizarCodBalanca();
                 else if (aba === 'estoque') renderizarEstoque();
                 else if (aba === 'analise') renderizarAnalise();
+                else if (aba === 'validade') renderizarValidade();
             }
         }
     });
@@ -1078,6 +1279,10 @@
             document.getElementById('buscaAnalise').value = termo;
             document.getElementById('buscaAnaliseFornecedor').value = '';
             aplicarFiltroAnalise();
+        } else if (abaAtiva === 'validade') {
+            document.getElementById('buscaValidade').value = termo;
+            document.getElementById('buscaValidadeFornecedor').value = '';
+            aplicarFiltroValidade();
         }
     });
 
@@ -1092,18 +1297,21 @@
 
     abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
 
-    for (const aba of ['codbalanca', 'estoque', 'analise']) {
+    // Restaurar preferências de visão
+    for (const aba of ['codbalanca', 'estoque', 'analise', 'validade']) {
         const saved = localStorage.getItem(`visao_${aba}`);
         if (saved === 'tabela' || saved === 'cards') visao[aba] = saved;
     }
 
     carregarPreferenciasAnalise();
 
+    // Carregar todos os dados
     Promise.all([
         carregarAtualizada(),
         carregarCodBalanca(),
         carregarEstoque(),
-        carregarAnalise()
+        carregarAnalise(),
+        carregarValidade()
     ]).then(() => {
         console.log('Carregamento concluído');
     });
