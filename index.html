@@ -195,6 +195,14 @@
         .btn-acao:hover {
             background: #e2e8f0;
         }
+        .btn-acao.primario {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .btn-acao.primario:hover {
+            background: #1d4ed8;
+        }
         .stats {
             background: #eef2f6;
             padding: 8px 16px;
@@ -328,8 +336,16 @@
             border-radius: 24px;
             padding: 24px;
             max-width: 90%;
-            width: 320px;
+            width: 400px;
             text-align: center;
+        }
+        .modal-conteudo input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
         }
         .modal-conteudo button {
             margin-top: 16px;
@@ -339,6 +355,10 @@
             background: #2563eb;
             color: white;
             cursor: pointer;
+        }
+        .modal-conteudo button.secundario {
+            background: #e2e8f0;
+            color: #0f172a;
         }
         #checklistColunas {
             text-align: left;
@@ -356,6 +376,35 @@
         }
         details table {
             margin-top: 8px;
+        }
+        .btn-editar {
+            background: #eab308;
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .btn-editar:hover {
+            background: #ca8a04;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0f172a;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.visivel {
+            opacity: 1;
         }
         @media (min-width: 768px) {
             body { padding: 24px; }
@@ -377,6 +426,7 @@
 
     <div class="dashboard">
         <div class="card-dash"><h3>Total SKUs</h3><div class="valor" id="totalSkus">-</div></div>
+        <div class="card-dash"><h3>⚠️ Estoque Crítico</h3><div class="valor" id="totalCritico">-</div></div>
     </div>
 
     <div class="topo">
@@ -417,6 +467,7 @@
             </div>
             <div class="filtros-botoes">
                 <button id="btnVisaoEstoque" class="btn-acao">🃏 Ver como Cards</button>
+                <button id="btnEditarEstoque" class="btn-acao primario">✏️ Editar Estoque</button>
             </div>
         </div>
         <div id="statusEstoque" class="carregando">Carregando dados...</div>
@@ -475,6 +526,20 @@
     </div>
 </div>
 
+<!-- Modal Editar Estoque -->
+<div id="modalEditarEstoque" class="modal">
+    <div class="modal-conteudo">
+        <h3>✏️ Editar Estoque</h3>
+        <div id="estoqueEditInfo"></div>
+        <label>Novo estoque:</label>
+        <input type="number" id="estoqueNovoValor" step="1" min="0">
+        <div>
+            <button id="btnSalvarEstoque">💾 Salvar</button>
+            <button id="btnCancelarEstoque" class="secundario">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Configurar Colunas -->
 <div id="modalColunas" class="modal">
     <div class="modal-conteudo">
@@ -485,6 +550,9 @@
     </div>
 </div>
 
+<!-- Toast de notificação -->
+<div id="toast" class="toast"></div>
+
 <script>
     // ==================== CONFIGURAÇÕES ====================
     const SHEET_ID = '1sxetmK0BUCeh1mk-_cGxESgn7XJSiVQ9R0UQQtXAEEY';
@@ -493,11 +561,38 @@
     const SHEET_ATUALIZADA = 'Atualizada';
     const SHEET_VALIDADE = 'Validade';
 
-    const URL_CODBALANCA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_CODBALANCA}`;
-    const URL_ESTOQUE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ESTOQUE}`;
-    const URL_ATUALIZADA = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_ATUALIZADA}`;
-    const URL_VALIDADE = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_VALIDADE}`;
+    // 🔥 SUBSTITUA PELA SUA URL DO APPS SCRIPT
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEDV9yW-b85rSyxASoo5RKOL5f1yd-RD8C3_hmMI6FAzDNQse1w8RZYFTs9Jtf1NM/exec';
 
+    // ==================== FUNÇÕES DE API ====================
+    // Leitura: GET com parâmetro sheet
+    async function apiGet(sheetName) {
+        const url = `${GAS_URL}?sheet=${encodeURIComponent(sheetName)}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+    }
+
+    // Escrita: POST com action e dados
+    async function apiPost(action, data, id = null) {
+        const payload = { action, data };
+        if (id) payload.id = id;
+
+        const resp = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const result = await resp.json();
+        if (result.meta && result.meta.status !== 200) {
+            throw new Error(result.meta.message || 'Erro na operação');
+        }
+        return result;
+    }
+
+    // ==================== DADOS GLOBAIS ====================
     let dadosCodBalanca = [];
     let dadosEstoque = [];
     let dadosValidade = [];
@@ -534,18 +629,6 @@
     };
 
     let filtroStatusValidade = 'todos';
-
-    // Elementos DOM
-    const topoDataDiv = document.getElementById('topoData');
-    const abaBtns = document.querySelectorAll('.aba-btn');
-    const conteudos = {
-        codbalanca: document.getElementById('aba-codbalanca'),
-        estoquevirtual: document.getElementById('aba-estoquevirtual'),
-        analise: document.getElementById('aba-analise'),
-        validade: document.getElementById('aba-validade')
-    };
-    const globalSearch = document.getElementById('globalSearch');
-    const limiteEstoqueInput = document.getElementById('limiteEstoque');
 
     // ==================== FUNÇÕES AUXILIARES ====================
     function normalizarNumero(valor) {
@@ -609,29 +692,36 @@
     function atualizarDashboard() {
         if (dadosEstoque.length) {
             document.getElementById('totalSkus').innerText = dadosEstoque.length;
+            const limite = parseInt(document.getElementById('limiteEstoque').value) || 10;
+            const criticos = dadosEstoque.filter(i => normalizarNumero(i['Estoque']) < limite).length;
+            document.getElementById('totalCritico').innerText = criticos;
         }
+    }
+
+    function mostrarToast(mensagem, sucesso = true) {
+        const toast = document.getElementById('toast');
+        toast.textContent = mensagem;
+        toast.style.background = sucesso ? '#0f172a' : '#b91c1c';
+        toast.classList.add('visivel');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => toast.classList.remove('visivel'), 3000);
     }
 
     // ==================== CARREGAMENTO ====================
     async function carregarAtualizada() {
         try {
-            const resp = await fetch(URL_ATUALIZADA);
-            if (resp.ok) {
-                const data = await resp.json();
-                if (data.length && data[0]['atualizada']) {
-                    const parsed = parseDataBrasil(data[0]['atualizada']);
-                    if (parsed && !isNaN(parsed.getTime())) ultimaAtualizacao = parsed;
-                }
+            const data = await apiGet(SHEET_ATUALIZADA);
+            if (data.length && data[0]['atualizada']) {
+                const parsed = parseDataBrasil(data[0]['atualizada']);
+                if (parsed && !isNaN(parsed.getTime())) ultimaAtualizacao = parsed;
             }
         } catch (e) {}
-        topoDataDiv.innerHTML = `📅 Última atualização: ${ultimaAtualizacao.toLocaleDateString('pt-BR')}`;
+        document.getElementById('topoData').innerHTML = `📅 Última atualização: ${ultimaAtualizacao.toLocaleDateString('pt-BR')}`;
     }
 
     async function carregarCodBalanca() {
         try {
-            const resp = await fetch(URL_CODBALANCA);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            dadosCodBalanca = await resp.json();
+            dadosCodBalanca = await apiGet(SHEET_CODBALANCA);
             aplicarFiltroCodBalanca();
             document.getElementById('statusCodBalanca').style.display = 'none';
         } catch (err) {
@@ -641,9 +731,7 @@
 
     async function carregarEstoque() {
         try {
-            const resp = await fetch(URL_ESTOQUE);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
+            const data = await apiGet(SHEET_ESTOQUE);
             dadosEstoque = data.map(item => ({
                 ...item,
                 Estoque: normalizarNumero(item['Estoque']),
@@ -661,9 +749,7 @@
 
     async function carregarValidade() {
         try {
-            const resp = await fetch(URL_VALIDADE);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
+            const data = await apiGet(SHEET_VALIDADE);
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
             dadosValidade = data.map(item => {
@@ -694,6 +780,32 @@
         if (dadosEstoque.length === 0) await carregarEstoque();
         document.getElementById('statusAnalise').style.display = 'none';
         aplicarFiltroAnalise();
+    }
+
+    // ==================== FUNÇÕES DE ESCRITA ====================
+    async function atualizarEstoque(codigo, novoValor) {
+        try {
+            // Busca o item atual para ter todos os campos
+            const item = dadosEstoque.find(i => i['Codigo']?.toString() === codigo);
+            if (!item) throw new Error('Produto não encontrado');
+
+            // Prepara os dados para atualização (mantém os outros campos)
+            const dadosAtualizados = {
+                ...item,
+                Estoque: novoValor
+            };
+
+            // Envia para a API
+            const resultado = await apiPost('update', dadosAtualizados, codigo);
+
+            // Recarrega os dados
+            await carregarEstoque();
+            mostrarToast(`✅ Estoque do código ${codigo} atualizado para ${novoValor}`);
+            return resultado;
+        } catch (err) {
+            mostrarToast(`❌ Erro: ${err.message}`, false);
+            throw err;
+        }
     }
 
     // ==================== ABA CÓDIGO X BALANÇA ====================
@@ -800,13 +912,13 @@
             return;
         }
 
-        const limite = parseInt(limiteEstoqueInput.value) || 10;
+        const limite = parseInt(document.getElementById('limiteEstoque').value) || 10;
 
         if (visao.estoque === 'tabela') {
             let html = `<div class="tabela-wrapper"><table id="tabela-estoque"><thead>`;
-            const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Fornecedor', 'QR'];
+            const colunas = ['Codigo', 'Nome', 'Estoque', 'Dias sem venda', 'Última venda', 'Última Compra', 'Fornecedor', 'Ações'];
             colunas.forEach(col => {
-                html += `<th>${col} <span class="ordenar-btn" data-coluna="${col === 'QR' ? '' : col}">${col !== 'QR' ? '⇅' : ''}</span></th>`;
+                html += `<th>${col} ${col !== 'Ações' ? `<span class="ordenar-btn" data-coluna="${col}">⇅</span>` : ''}</th>`;
             });
             html += `</thead><tbody>`;
             for (const i of ordenados) {
@@ -818,12 +930,15 @@
                 html += `<tr class="${classe}">
                               <td class="codigo">${i['Codigo'] || ''}</td>
                               <td>${i['Nome'] || ''}</td>
-                              <td class="qtde">${estoque}</td>
+                              <td class="qtde" id="estoque-${i['Codigo']}">${estoque}</td>
                               <td class="qtde">${i['Dias sem venda'] || ''}</td>
                               <td>${i['Última venda'] || ''}</td>
                               <td>${i['Última Compra'] || ''}</td>
                               <td>${i['Fornecedor'] || ''}</td>
-                              <td><button class="btn-qr" data-valor="${qrValor}">📷 QR</button></td>
+                              <td>
+                                  <button class="btn-qr" data-valor="${qrValor}">📷 QR</button>
+                                  <button class="btn-editar" onclick="abrirModalEditarEstoque('${i['Codigo']}')">✏️</button>
+                              </td>
                              </tr>`;
             }
             html += `</tbody></table></div>`;
@@ -845,6 +960,7 @@
                             <div class="card-linha"><span class="label">Última Compra:</span><span class="valor">${i['Última Compra'] || ''}</span></div>
                             <div class="card-linha"><span class="label">Fornecedor:</span><span class="valor">${i['Fornecedor'] || ''}</span></div>
                             <button class="btn-qr" data-valor="${qrValor}">📷 Gerar QR</button>
+                            <button class="btn-editar" onclick="abrirModalEditarEstoque('${i['Codigo']}')">✏️ Editar</button>
                          </div>`;
             }
             html += `</div>`;
@@ -858,6 +974,58 @@
             pagDiv.innerHTML = gerarBotoesPaginacao(paginaAtual, totalPaginas, 'estoque');
         } else document.getElementById('paginacaoEstoque').style.display = 'none';
     }
+
+    // ==================== MODAL EDITAR ESTOQUE ====================
+    let codigoEditando = null;
+
+    function abrirModalEditarEstoque(codigo) {
+        codigoEditando = codigo;
+        const item = dadosEstoque.find(i => i['Codigo']?.toString() === codigo);
+        if (!item) {
+            mostrarToast('Produto não encontrado', false);
+            return;
+        }
+        document.getElementById('estoqueEditInfo').innerHTML = `
+            <p><strong>Código:</strong> ${item['Codigo']}</p>
+            <p><strong>Produto:</strong> ${item['Nome'] || ''}</p>
+            <p><strong>Estoque atual:</strong> ${item['Estoque']}</p>
+        `;
+        document.getElementById('estoqueNovoValor').value = item['Estoque'];
+        document.getElementById('modalEditarEstoque').classList.add('ativo');
+    }
+
+    function fecharModalEditarEstoque() {
+        document.getElementById('modalEditarEstoque').classList.remove('ativo');
+        codigoEditando = null;
+    }
+
+    async function salvarEdicaoEstoque() {
+        if (!codigoEditando) return;
+        const novoValor = parseFloat(document.getElementById('estoqueNovoValor').value);
+        if (isNaN(novoValor) || novoValor < 0) {
+            mostrarToast('Digite um valor válido', false);
+            return;
+        }
+        try {
+            await atualizarEstoque(codigoEditando, novoValor);
+            fecharModalEditarEstoque();
+        } catch (err) {
+            // erro já tratado na função
+        }
+    }
+
+    document.getElementById('btnEditarEstoque').addEventListener('click', () => {
+        // Abre modal para o primeiro item visível
+        const primeiroCodigo = document.querySelector('#conteudoEstoque .btn-editar')?.dataset?.codigo;
+        if (primeiroCodigo) {
+            abrirModalEditarEstoque(primeiroCodigo);
+        } else {
+            mostrarToast('Nenhum item para editar', false);
+        }
+    });
+
+    document.getElementById('btnSalvarEstoque').addEventListener('click', salvarEdicaoEstoque);
+    document.getElementById('btnCancelarEstoque').addEventListener('click', fecharModalEditarEstoque);
 
     // ==================== ABA ANÁLISE DE ESTOQUE ====================
     const todasColunasAnalise = [
@@ -1088,7 +1256,6 @@
             }
         });
 
-        // Ordena os lotes dentro de cada grupo por data de validade
         for (const grupo of mapa.values()) {
             grupo.lotes.sort((a, b) => a.dataValidade - b.dataValidade);
         }
@@ -1111,7 +1278,6 @@
                 return match;
             });
         }
-        // Aplicar filtro de status
         if (filtroStatusValidade !== 'todos') {
             filtrados = filtrados.filter(i => {
                 const d = i.diasRestantes;
@@ -1126,17 +1292,9 @@
             });
         }
 
-        // Agrupa se necessário
         let dadosParaExibir;
         if (modoAgrupadoValidade) {
             const grupos = agruparValidades(filtrados);
-            // Aplica o filtro de status também nos grupos (se necessário)
-            if (filtroStatusValidade !== 'todos') {
-                // O filtro já foi aplicado aos itens; precisamos filtrar os grupos que não têm itens que passam?
-                // Como agrupamos apenas itens que passaram, grupos sem itens não aparecerão.
-                // Mas o grupo pode ter itens que passaram e outros não; nesse caso, a validadeProxima deve ser baseada apenas nos itens filtrados.
-                // Já está correto, pois agrupamos os itens filtrados.
-            }
             dadosParaExibir = grupos;
             document.getElementById('statsValidade').innerText = `${dadosParaExibir.length} produtos`;
         } else {
@@ -1245,7 +1403,7 @@
 
         if (visao.validade === 'tabela') {
             let html = `<div class="tabela-wrapper"><table id="tabela-validade-agrupada"><thead>`;
-            html += `<th></th>`; // seta
+            html += `<th></th>`;
             const colunas = [
                 { chave: 'codigo', label: 'Código' },
                 { chave: 'produto', label: 'Produto' },
@@ -1293,7 +1451,6 @@
             conteudoDiv.innerHTML = html;
             attachOrdenacao('tabela-validade-agrupada', 'validade');
         } else {
-            // Cards agrupados com details
             let html = `<div class="cards-view">`;
             grupos.forEach((g, idx) => {
                 const st = statusDoItem(g.diasProximo);
@@ -1335,7 +1492,6 @@
         }
     }
 
-    // Função global para expandir/recolher linha de lotes (tabela agrupada)
     window.toggleLotes = function(idx) {
         const linha = document.getElementById(`lotes-${idx}`);
         const seta = document.getElementById(`seta-${idx}`);
@@ -1414,13 +1570,12 @@
         else if (aba === 'validade') renderizarValidade();
     }
 
-    // Event listeners
+    // ==================== EVENT LISTENERS ====================
     document.getElementById('btnVisaoCodBalanca').addEventListener('click', () => alternarVisao('codbalanca'));
     document.getElementById('btnVisaoEstoque').addEventListener('click', () => alternarVisao('estoque'));
     document.getElementById('btnVisaoAnalise').addEventListener('click', () => alternarVisao('analise'));
     document.getElementById('btnVisaoValidade').addEventListener('click', () => alternarVisao('validade'));
 
-    // Botão de alternância do modo agrupado
     document.getElementById('btnModoValidade').addEventListener('click', () => {
         modoAgrupadoValidade = !modoAgrupadoValidade;
         document.getElementById('btnModoValidade').textContent = modoAgrupadoValidade ? '🗂️ Modo: Agrupado' : '📋 Modo: Detalhado';
@@ -1463,7 +1618,12 @@
     globalSearch.addEventListener('input', (e) => {
         const termo = e.target.value.trim().toLowerCase();
         let abaAtiva = null;
-        for (const [id, el] of Object.entries(conteudos)) {
+        for (const [id, el] of Object.entries({
+            codbalanca: document.getElementById('aba-codbalanca'),
+            estoquevirtual: document.getElementById('aba-estoquevirtual'),
+            analise: document.getElementById('aba-analise'),
+            validade: document.getElementById('aba-validade')
+        })) {
             if (el.classList.contains('ativo')) { abaAtiva = id; break; }
         }
         if (abaAtiva === 'codbalanca') {
@@ -1485,16 +1645,23 @@
     });
 
     function trocarAba(abaId) {
+        const conteudos = {
+            codbalanca: document.getElementById('aba-codbalanca'),
+            estoquevirtual: document.getElementById('aba-estoquevirtual'),
+            analise: document.getElementById('aba-analise'),
+            validade: document.getElementById('aba-validade')
+        };
         for (const [id, el] of Object.entries(conteudos)) {
             el.classList.toggle('ativo', id === abaId);
         }
-        abaBtns.forEach(btn => {
+        document.querySelectorAll('.aba-btn').forEach(btn => {
             btn.classList.toggle('ativo', btn.dataset.aba === abaId);
         });
     }
 
-    abaBtns.forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
+    document.querySelectorAll('.aba-btn').forEach(btn => btn.addEventListener('click', () => trocarAba(btn.dataset.aba)));
 
+    // ==================== INICIALIZAÇÃO ====================
     // Restaurar preferências
     for (const aba of ['codbalanca', 'estoque', 'analise', 'validade']) {
         const saved = localStorage.getItem(`visao_${aba}`);
@@ -1511,7 +1678,9 @@
         carregarAnalise(),
         carregarValidade()
     ]).then(() => {
-        console.log('Carregamento concluído');
+        console.log('🚀 Carregamento concluído com sucesso!');
+    }).catch(err => {
+        console.error('❌ Erro no carregamento inicial:', err);
     });
 </script>
 </body>
